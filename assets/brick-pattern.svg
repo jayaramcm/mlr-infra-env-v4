@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="60" viewBox="0 0 120 60">
+  <!-- Running Bond Brick Pattern (Subtle Lighter Tint for Architectural Canvas) -->
+  <rect width="120" height="60" fill="rgba(255, 255, 255, 0.22)" />
+  <path d="M 0 0 L 120 0 M 0 30 L 120 30 M 0 60 L 120 60 M 0 0 L 0 30 M 60 0 L 60 30 M 120 0 L 120 30 M 30 30 L 30 60 M 90 30 L 90 60" 
+        stroke="rgba(255, 255, 255, 0.8)" 
+        stroke-width="1.5" 
+        stroke-linecap="square" />
+</svg>

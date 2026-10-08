@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Agent and external submodules
+no-ai-slop/
+.claude/
+.gemini/
+.agent/
+agent/
+.taste-skills/
+
+# Temporary and audit screenshots
+audit_*.png
+*.log
+
+# OS metadata
+.DS_Store
+Thumbs.db
