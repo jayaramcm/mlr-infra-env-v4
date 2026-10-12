@@ -10,6 +10,35 @@
 document.addEventListener('DOMContentLoaded', () => {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // 0. INITIALIZE LENIS SMOOTH SCROLL ENGINE
+  let lenis = null;
+  if (typeof Lenis !== 'undefined' && !prefersReducedMotion) {
+    try {
+      lenis = new Lenis({
+        duration: 1.15,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        orientation: 'vertical',
+        gestureOrientation: 'vertical',
+        smoothWheel: true,
+        touchMultiplier: 1.1,
+      });
+      window.lenis = lenis;
+
+      // If preloader is currently active, pause Lenis until preloader exits
+      if (document.documentElement.classList.contains('is-loading')) {
+        lenis.stop();
+      }
+
+      function raf(time) {
+        lenis.raf(time);
+        requestAnimationFrame(raf);
+      }
+      requestAnimationFrame(raf);
+    } catch (err) {
+      console.warn('Lenis initialization skipped:', err);
+    }
+  }
+
   // 1. NAVBAR SCROLL COLLAPSE & 75% SECTION INDICATOR ANIMATION (Replicated from mlr-infra-v4)
   const navbar = document.getElementById('siteHeader');
   const roller = document.getElementById('navIndicatorRoller');
@@ -23,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     { id: 'products', label: 'Products' },
     { id: 'projects', label: 'Projects' },
     { id: 'how-we-work', label: 'How We Work' },
+    { id: 'faq', label: 'FAQ' },
     { id: 'contact', label: 'Contact' }
   ];
 
@@ -203,29 +233,58 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 240);
   }
 
-  // Expand when user hovers on navbar when scrolled, with gentle 160ms grace period on mouseleave
-  if (navbar) {
+  // Expand ONLY when user hovers over section heading (.nav-center-indicator), NOT on logo or CTA
+  if (navbar && centerIndicator) {
     let collapseTimer = null;
 
-    navbar.addEventListener('mouseenter', () => {
+    centerIndicator.addEventListener('mouseenter', () => {
       if (collapseTimer) {
         clearTimeout(collapseTimer);
         collapseTimer = null;
       }
-      isNavbarHovered = true;
       if (navbar.classList.contains('is-scrolled')) {
         navbar.classList.add('is-expanded');
       }
     });
 
+    // While user is moving around within the revealed desktop menu, keep it expanded
+    const navDesktop = navbar.querySelector('.nav-desktop');
+    if (navDesktop) {
+      navDesktop.addEventListener('mouseenter', () => {
+        if (collapseTimer) {
+          clearTimeout(collapseTimer);
+          collapseTimer = null;
+        }
+      });
+      navDesktop.addEventListener('mouseleave', () => {
+        if (navbar.classList.contains('is-expanded')) {
+          collapseTimer = setTimeout(() => {
+            navbar.classList.remove('is-expanded');
+          }, 200);
+        }
+      });
+    }
+
+    // Leaving the entire navbar collapses it after a gentle 200ms grace period
     navbar.addEventListener('mouseleave', () => {
-      isNavbarHovered = false;
       if (navbar.classList.contains('is-expanded')) {
         collapseTimer = setTimeout(() => {
-          if (!isNavbarHovered) {
-            navbar.classList.remove('is-expanded');
+          navbar.classList.remove('is-expanded');
+        }, 200);
+      }
+    });
+
+    // Logo and CTA: Hovering over them must NOT trigger expansion
+    const navBrand = navbar.querySelector('.nav-brand');
+    const navRight = navbar.querySelector('.nav-right');
+    [navBrand, navRight].forEach(el => {
+      if (el) {
+        el.addEventListener('mouseenter', (e) => {
+          // If not currently expanded, ensure it stays collapsed
+          if (!navbar.classList.contains('is-expanded')) {
+            e.stopPropagation();
           }
-        }, 160);
+        });
       }
     });
 
@@ -233,7 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
     navbar.querySelectorAll('a, button').forEach(el => {
       el.addEventListener('click', () => {
         if (collapseTimer) clearTimeout(collapseTimer);
-        isNavbarHovered = false;
         navbar.classList.remove('is-expanded');
       });
     });
@@ -308,7 +366,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (hash === '#home') {
       e.preventDefault();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (lenis) {
+        lenis.scrollTo(0, { duration: 1.15 });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
       if (history.pushState) {
         history.pushState(null, '', window.location.pathname + window.location.search);
       }
@@ -318,6 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
         drawer.classList.remove('open');
         toggle?.classList.remove('open');
         toggle?.setAttribute('aria-expanded', 'false');
+        lenis?.start();
       }
       return;
     }
@@ -326,9 +389,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!targetEl) return;
 
     e.preventDefault();
-    const offset = 88;
-    const targetTop = targetEl.getBoundingClientRect().top + (window.pageYOffset || window.scrollY || 0) - offset;
-    window.scrollTo({ top: targetTop, behavior: 'smooth' });
+    if (lenis) {
+      lenis.scrollTo(targetEl, { offset: -88, duration: 1.15 });
+    } else {
+      const offset = 88;
+      const targetTop = targetEl.getBoundingClientRect().top + (window.pageYOffset || window.scrollY || 0) - offset;
+      window.scrollTo({ top: targetTop, behavior: 'smooth' });
+    }
 
     if (history.pushState) {
       history.pushState(null, '', hash);
@@ -340,6 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
       drawer.classList.remove('open');
       toggle?.classList.remove('open');
       toggle?.setAttribute('aria-expanded', 'false');
+      lenis?.start();
     }
   });
 
@@ -352,6 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const isOpen = mobileDrawer.classList.toggle('open');
       mobileToggle.classList.toggle('open');
       mobileToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      if (isOpen) lenis?.stop(); else lenis?.start();
     });
 
     // Close mobile drawer when a link is clicked
@@ -360,6 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mobileDrawer.classList.remove('open');
         mobileToggle.classList.remove('open');
         mobileToggle.setAttribute('aria-expanded', 'false');
+        lenis?.start();
       });
     });
   }
@@ -951,7 +1021,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.innerHTML = `<span class="btn-label">Send Enquiry</span><span class="btn-arrow-block" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>`;
+          submitBtn.innerHTML = `<span class="btn-label">Request a Project Quote</span><span class="btn-arrow-block" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>`;
         }
         enquiryForm.classList.add('hidden');
         if (enquirySuccess) {
@@ -972,5 +1042,29 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // FAQ Accordion Interactivity
+  const faqTriggers = document.querySelectorAll('.faq-trigger');
+  faqTriggers.forEach(trigger => {
+    trigger.addEventListener('click', () => {
+      const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
+      const panelId = trigger.getAttribute('aria-controls');
+      const panel = document.getElementById(panelId);
+
+      faqTriggers.forEach(otherTrigger => {
+        if (otherTrigger !== trigger) {
+          otherTrigger.setAttribute('aria-expanded', 'false');
+          const otherPanelId = otherTrigger.getAttribute('aria-controls');
+          const otherPanel = document.getElementById(otherPanelId);
+          if (otherPanel) otherPanel.classList.remove('open');
+        }
+      });
+
+      trigger.setAttribute('aria-expanded', !isExpanded ? 'true' : 'false');
+      if (panel) {
+        panel.classList.toggle('open', !isExpanded);
+      }
+    });
+  });
 });
 

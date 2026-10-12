@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="is-loading">
 
 <head>
   <meta charset="UTF-8">
@@ -21,11 +21,77 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,112..125,500..800;1,112..125,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="stylesheet" href="styles.css?v=12">
   <link rel="icon" type="image/png" href="assets/mlr-logo.png">
 </head>
 
 <body>
+
+  <!-- ============ MLR PRELOADER ============ -->
+  <div id="mlr-preloader" role="status" aria-label="Loading">
+    <svg class="mlr-logo" viewBox="182 185 596 170" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <clipPath id="mlrWordClip"><rect x="385" y="216" width="345" height="106"/></clipPath>
+        <clipPath id="mlrTrackClip"><rect x="390.56" y="340.5" width="376.47" height="3.91"/></clipPath>
+      </defs>
+
+      <!-- emblem -->
+      <polygon class="mlr-frame" fill="#0056A7" points="256.73,195.59 192.73,259.58 192.73,344.41 365.88,344.41 365.88,195.59"/>
+      <polygon class="mlr-bar b1" fill="#fff" points="217.49,270 217.45,319.69 242.19,319.69 242.25,245.15"/>
+      <polygon class="mlr-bar b2" fill="#fff" points="267.01,220.31 242.25,245.15 266.99,245.15 266.93,319.69 291.66,319.69 291.75,220.31"/>
+      <polygon class="mlr-bar b3" fill="#fff" points="316.45,270 316.4,319.69 341.14,319.69 341.18,270"/>
+      <polygon class="mlr-arrow" fill="#8DC63F" points="316.49,220.31 291.73,245.15 316.47,245.15 316.45,270 341.2,245.15 341.23,220.31"/>
+
+      <!-- wordmark -->
+      <g clip-path="url(#mlrWordClip)" fill="#0056A7">
+        <polygon class="mlr-ltr m1" points="440.13,220.31 415.34,220.31 390.58,245.15 390.57,319.69 415.31,319.69 415.38,245.15 440.11,245.15 440.05,319.69 464.79,319.69 464.87,220.31"/>
+        <polygon class="mlr-ltr m2" points="514.35,220.31 489.61,220.31 464.85,245.15 489.59,245.15 489.53,319.69 514.26,319.69"/>
+        <polygon class="mlr-ltr l" points="557.05,294.85 557.07,220.31 532.33,220.31 532.25,319.69 606.47,319.69 606.53,294.85"/>
+        <path class="mlr-ltr r" d="M711.44,275.27l12.37-12.37l0-17.8l-24.87-24.78l-74.49-0.02h-0.02v67.37v32.01h24.74l0.01-32.01l41.3,0.01
+          l8.58,8.6l-0.01,23.4h24.74l0.01-31.99h0.01v-0.02L711.44,275.27z M699.07,254.53l-8.41,8.43l-41.48-0.01l0-17.89l40.46,0.01
+          l9.43,9.44V254.53z"/>
+      </g>
+
+      <!-- INFRA (bottom to top: I N F R A) -->
+      <g fill="#8DC63F">
+        <path class="mlr-inf" d="M767.03,319.69h-18.49v-3.52h18.49V319.69z"/>
+        <path class="mlr-inf" d="M767.03,310.45h-18.49v-3.56l13.29-11.13h-13.29v-3.52h18.49v3.56l-13.32,11.13h13.32V310.45z"/>
+        <path class="mlr-inf" d="M767.03,286.5h-18.49v-16.81h3.36v13.29h5.12v-11.57h3.36v11.57h6.65V286.5z"/>
+        <path class="mlr-inf" d="M767.03,263.97h-18.49v-13.18c0-1.63,0.48-2.89,1.45-3.79c0.97-0.9,2.43-1.35,4.4-1.35
+          c1.67,0,2.98,0.33,3.93,0.99c0.95,0.66,1.54,1.6,1.78,2.82l6.93-3.63v4l-6.8,3.37v7.26h6.8V263.97z M751.9,251.2v9.24h4.94
+          l0.03-9.24c0-0.65-0.19-1.14-0.57-1.48c-0.38-0.34-1.02-0.52-1.91-0.52c-0.91,0-1.56,0.17-1.93,0.52
+          C752.08,250.06,751.9,250.56,751.9,251.2z"/>
+        <path class="mlr-inf" d="M767.03,239.91l-18.49-7.08v-5.43l18.49-7.08v3.83l-3.9,1.5v8.95l3.9,1.5V239.91z M759.76,233.31v-6.4
+          l-7.99,3.06v0.29L759.76,233.31z"/>
+      </g>
+
+      <!-- loading track -->
+      <g clip-path="url(#mlrTrackClip)">
+        <rect class="mlr-track" x="390.56" y="340.5" width="376.47" height="3.91" fill="#E3ECF6"/>
+        <rect class="mlr-sweep" x="390.56" y="340.5" width="90" height="3.91" fill="#8DC63F"/>
+      </g>
+    </svg>
+  </div>
+
+  <script>
+    /* Hides the preloader once the page has loaded, but never before the intro has played. */
+    (function () {
+      var el = document.getElementById('mlr-preloader');
+      var start = performance.now();
+      var MIN_SHOW = 2600; // ms — lower for a snappier exit, raise to always show the loading sweep
+      var finished = false;
+      function done() {
+        if (finished) return; finished = true;
+        setTimeout(function () {
+          if (el) el.classList.add('is-done');
+          document.documentElement.classList.remove('is-loading');
+          if (window.lenis) window.lenis.start();
+        }, Math.max(0, MIN_SHOW - (performance.now() - start)));
+      }
+      if (document.readyState === 'complete') done(); else window.addEventListener('load', done);
+      window.MLRPreloader = { done: done }; // call manually for SPA / route changes
+    })();
+  </script>
 
   <!-- Accessible Skip Link -->
   <a href="#home" class="skip-link">Skip to main content</a>
@@ -38,7 +104,7 @@
     <div class="nav-container">
       <!-- White-Background Logo First on Left -->
       <a href="#home" class="nav-brand" aria-label="MLR Infra Building Materials Home">
-        <img src="assets/mlr-logo.svg" alt="MLR Infra Building Materials" class="nav-logo-img">
+        <img src="assets/mlr-logo.svg?v=3" alt="MLR Infra Building Materials" class="nav-logo-img">
       </a>
 
       <!-- Desktop Navigation Menu -->
@@ -49,6 +115,7 @@
           <li><a href="#products" class="nav-link">Products</a></li>
           <li><a href="#projects" class="nav-link">Projects</a></li>
           <li><a href="#how-we-work" class="nav-link">How We Work</a></li>
+          <li><a href="#faq" class="nav-link">FAQ</a></li>
           <li><a href="#contact" class="nav-link">Contact</a></li>
         </ul>
       </nav>
@@ -91,6 +158,7 @@
     <a href="#products" class="mobile-nav-link">Products</a>
     <a href="#projects" class="mobile-nav-link">Projects</a>
     <a href="#how-we-work" class="mobile-nav-link">How We Work</a>
+    <a href="#faq" class="mobile-nav-link">FAQ</a>
     <a href="#contact" class="mobile-nav-link">Contact</a>
   </nav>
 
@@ -121,18 +189,17 @@
           </div>
 
           <h1 class="hero-title">
-            We Don't Deliver <span class="hero-accent">Bricks</span>.<br>
-            We Bring the <span class="hero-accent">Factory</span>.
+            We Bring the <span class="hero-accent">Factory</span><br>
+            to Your Site.
           </h1>
 
           <p class="hero-subtext">
-            CC bricks, paver blocks, and precast fencing, cast where you're building, not trucked in and hoped for.
-            Mobilized on-site with dedicated equipment and skilled crews.
+            On-site manufacturing of concrete bricks, paver blocks, and precast fencing for large construction requirements. Equipment, production teams, and site support coordinated around your project.
           </p>
 
           <div class="hero-buttons">
             <a href="#contact" class="btn btn-primary">
-              <span class="btn-label">Get a Quote</span>
+              <span class="btn-label">Discuss Your Project</span>
               <span class="btn-arrow-block" aria-hidden="true">
                 <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"
                   stroke-linecap="round" stroke-linejoin="round">
@@ -140,6 +207,9 @@
                   <polyline points="9 4 13 8 9 12"></polyline>
                 </svg>
               </span>
+            </a>
+            <a href="#products" class="btn btn-secondary">
+              <span class="btn-label">Explore Products</span>
             </a>
           </div>
         </div>
@@ -342,13 +412,12 @@
             </div>
 
             <h2 class="about-headline">
-              Most brick suppliers<br>
-              make you wait for a truck.<br>
-              <span class="about-headline-accent">We skip the truck.</span>
+              Manufacturing closer<br>
+              <span class="about-headline-accent">to where you build.</span>
             </h2>
 
             <p class="about-subtext">
-              For large orders, we move our machinery to your site and cast the bricks or fencing panels right there.
+              MLR Infra mobilises manufacturing equipment and production teams to suitable project sites. We coordinate setup, materials, and labour around the agreed scope, helping you manage production through one point of contact.
             </p>
 
             <!-- 3 Blue Benefit Badges -->
@@ -481,9 +550,7 @@
             <h3 class="about-card-heading vision-title">Vision</h3>
 
             <p class="about-card-body vision-body">
-              CC bricks, paver blocks, and precast fencing are what we build today. What we're building toward is
-              bigger: a full range of materials, made the same way, <strong class="vision-highlight">on-site, on your
-                terms.</strong>
+              To expand access to reliable construction materials through coordinated on-site manufacturing and project support.
             </p>
           </div>
         </div>
@@ -498,7 +565,7 @@
       <div class="container why-choose-container">
         <!-- Section Header -->
         <div class="why-choose-header">
-          <h2 class="why-heading">Why builders choose us</h2>
+          <h2 class="why-heading">Built around your project requirements.</h2>
         </div>
 
         <!-- 5 Architectural Value Cards -->
@@ -612,12 +679,11 @@
               <span class="section-eyebrow">PRODUCTS</span>
             </div>
             <h2 id="products-hero-title" class="products-hero-title">
-              CC Bricks<br>
-              Three types,<br>
-              <span class="text-green">each built<br>for a job</span>
+              Concrete products<br>
+              <span class="text-green">for your project<br>specifications.</span>
             </h2>
             <p class="products-hero-desc">
-              Different projects demand different solutions. We manufacture CC bricks in three types, each engineered for strength, efficiency, and real-world building needs.
+              Explore our concrete bricks, paver blocks, and precast fencing. Confirm dimensions, intended applications, and production requirements with our team before ordering.
             </p>
             <div class="products-stats-row">
               <div class="prod-stat-item">
@@ -754,8 +820,8 @@
                 For driveways, walkways and outdoor flooring. Handles vehicle load and foot traffic without cracking or shifting over time.
               </p>
               <div class="duo-action-wrap">
-                <a href="#contact" class="btn-duo-action">
-                  <span>VIEW PAVER BLOCKS</span>
+                <a href="#contact" class="btn-duo-primary">
+                  <span>REQUEST A QUOTE</span>
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
@@ -796,6 +862,130 @@
 
         </div>
 
+        
+        <!-- 4b. Product Engineering Specifications Table (Buyer Matrix) -->
+        <div class="products-specs-block" id="product-specifications">
+          <div class="specs-header-row">
+            <div class="specs-header-left">
+              <h3 class="specs-heading">Product specifications &amp; supply matrix</h3>
+              <p class="specs-subtext">Verified dimensions, load tolerances, and supply modes across our concrete product line.</p>
+            </div>
+            <div class="specs-header-badge">
+              <span class="badge-dot" aria-hidden="true"></span>
+              <span>IS Standard Compliant</span>
+            </div>
+          </div>
+          
+          <div class="specs-table-container">
+            <div class="specs-table-scroll">
+              <table class="specs-table" aria-label="Product Specifications Matrix">
+                <thead>
+                  <tr>
+                    <th scope="col" class="col-product">Product</th>
+                    <th scope="col" class="col-dims">Dimensions (mm / ft)</th>
+                    <th scope="col" class="col-apps">Intended Applications</th>
+                    <th scope="col" class="col-perf">Tested Performance</th>
+                    <th scope="col" class="col-opts">Available Options</th>
+                    <th scope="col" class="col-supply">Supply Method</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="cell-product">
+                      <strong class="product-title-cell">Solid CC Bricks</strong>
+                      <span class="cell-sub">High-density cement concrete</span>
+                    </td>
+                    <td class="cell-dims">
+                      <span class="mono-dim">300×200×200</span>
+                      <span class="mono-dim">300×200×150</span>
+                      <span class="mono-dim">300×200×100</span>
+                      <span class="mono-dim">290×225×140</span>
+                      <span class="mono-dim">290×140×100</span>
+                    </td>
+                    <td class="cell-apps">Load-bearing walls, structural foundations, high-rise masonry, basements</td>
+                    <td class="cell-perf">
+                      <span class="perf-metric">Compressive: 5.0–7.5+ N/mm²</span>
+                      <span class="perf-metric">Water Absorption: &lt; 10%</span>
+                      <span class="perf-metric">Fire Resistance: 4+ Hours</span>
+                    </td>
+                    <td class="cell-opts">Solid high-density, cellular lightweight (CLC), hollow core, frogged face</td>
+                    <td class="cell-supply">
+                      <span class="supply-tag supply-onsite">On-Site Mobilisation</span>
+                      <span class="supply-sub">Plant dispatch for smaller orders</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="cell-product">
+                      <strong class="product-title-cell">Fly Ash Bricks</strong>
+                      <span class="cell-sub">Eco-engineered industrial silica</span>
+                    </td>
+                    <td class="cell-dims">
+                      <span class="mono-dim">230×110×70</span>
+                      <span class="mono-dim">250×120×75</span>
+                      <span class="mono-dim">Custom mould sizes</span>
+                    </td>
+                    <td class="cell-apps">Framed multi-storey infill walls, perimeter masonry, green building certified structures</td>
+                    <td class="cell-perf">
+                      <span class="perf-metric">Compressive: 4.0–5.5 N/mm²</span>
+                      <span class="perf-metric">Density: 1650–1850 kg/m³</span>
+                      <span class="perf-metric">Thermal Cond: 0.35 W/mK</span>
+                    </td>
+                    <td class="cell-opts">Class F fly ash mix, high-silica grade, precision machine edge</td>
+                    <td class="cell-supply">
+                      <span class="supply-tag supply-onsite">On-Site Mobilisation</span>
+                      <span class="supply-sub">Regional plant batch transport</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="cell-product">
+                      <strong class="product-title-cell">Paver Blocks</strong>
+                      <span class="cell-sub">High-traffic interlocking concrete</span>
+                    </td>
+                    <td class="cell-dims">
+                      <span class="mono-dim">60 mm (Pedestrian)</span>
+                      <span class="mono-dim">80 mm (Vehicular / Roads)</span>
+                      <span class="mono-dim">100 mm (Heavy logistics)</span>
+                    </td>
+                    <td class="cell-apps">Internal driveways, access roads, container terminals, parking complexes, walkways</td>
+                    <td class="cell-perf">
+                      <span class="perf-metric">Grade: M-30 to M-50 Concrete</span>
+                      <span class="perf-metric">Flexural Strength: &gt; 3.8 MPa</span>
+                      <span class="perf-metric">Abrasion Loss: &lt; 2.0 mm</span>
+                    </td>
+                    <td class="cell-opts">Uni-paver, Zigzag, I-Shape; Natural Grey, Terracotta Red, Mustard Yellow; Shot-blasted</td>
+                    <td class="cell-supply">
+                      <span class="supply-tag supply-onsite">On-Site Vibro-Press</span>
+                      <span class="supply-sub">Palletised yard dispatch</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="cell-product">
+                      <strong class="product-title-cell">Precast Fencing</strong>
+                      <span class="cell-sub">Modular pre-stressed RCC system</span>
+                    </td>
+                    <td class="cell-dims">
+                      <span class="mono-dim">Planks: 6 ft / 7 ft × 1 ft × 50mm</span>
+                      <span class="mono-dim">Posts: 7 ft to 10 ft grooved</span>
+                      <span class="mono-dim">Wall heights: 4 ft to 6.6+ ft</span>
+                    </td>
+                    <td class="cell-apps">Industrial compound walls, commercial perimeter security, solar park boundary, agricultural demarcation</td>
+                    <td class="cell-perf">
+                      <span class="perf-metric">Grade: M-25 / M-30 RCC</span>
+                      <span class="perf-metric">Steel: High-tensile 3mm/4mm PC wire</span>
+                      <span class="perf-metric">100% Waterproof &amp; Relocatable</span>
+                    </td>
+                    <td class="cell-opts">Smooth finish, wood-grain texture, brick-face finish, concertina razor wire integration</td>
+                    <td class="cell-supply">
+                      <span class="supply-tag supply-onsite">On-Site Bed Casting</span>
+                      <span class="supply-sub">Modular rapid site erection</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- 5. Kicker Strip: Coming Soon -->
         <div class="products-kicker-strip">
           <div class="kicker-left">
@@ -819,10 +1009,10 @@
           <div class="services-header">
             <div class="services-header-content">
               <h2 class="services-title">
-                Beyond materials
+                Site support, coordinated with production.
               </h2>
               <p class="services-intro-text">
-                We bring the people, preparation, and support needed to keep your site moving.
+                We deploy on-site centering formwork, reinforcement steel bending, and skilled construction crews directly alongside material production. Coordinated through a single point of contact, our site services keep your build moving without contractor bottlenecks.
               </p>
             </div>
           </div>
@@ -898,10 +1088,10 @@
               <span class="projects-eyebrow text-green">PROJECTS</span>
             </div>
             <h2 class="projects-title">
-              Where we've <span class="text-green">built</span>
+              Projects we have <span class="text-green">supported.</span>
             </h2>
             <p class="projects-intro-text">
-              Factories, hospitals, colleges, and homes, all built with us on-site. We supplied bricks and unskilled labour on each of the following:
+              Selected industrial, residential, healthcare, and institutional projects supported through material supply and labour services.
             </p>
           </div>
         </div>
@@ -1134,13 +1324,13 @@
               <span class="process-eyebrow-text">HOW WE WORK</span>
             </div>
             <h2 class="process-title">
-              How we bring the <br>
-              <span class="text-green">factory to you</span>
+              From site assessment<br>
+              <span class="text-green">to production handover.</span>
             </h2>
           </div>
           <div class="process-header-right">
             <p class="process-intro">
-              From the first site visit to a finished batch, here’s what moving the factory to your location looks like.
+              Structured four-stage operational workflow from initial technical scoping through on-site quality assurance.
             </p>
           </div>
         </div>
@@ -1199,9 +1389,9 @@
           <!-- Step 01 -->
           <article class="process-card" data-step="1">
             <span class="process-step-badge">STEP 01</span>
-            <h3 class="process-card-title">Site Assessment</h3>
+            <h3 class="process-card-title">Assess</h3>
             <p class="process-card-desc">
-              We visit, survey the ground, and scope exactly what the job needs before a single machine moves.
+              Review the site, specifications, quantities, access, and production requirements.
             </p>
             <span class="process-ghost-num" aria-hidden="true">01</span>
           </article>
@@ -1209,9 +1399,9 @@
           <!-- Step 02 -->
           <article class="process-card" data-step="2">
             <span class="process-step-badge">STEP 02</span>
-            <h3 class="process-card-title">Machinery Mobilization</h3>
+            <h3 class="process-card-title">Mobilise</h3>
             <p class="process-card-desc">
-              Casting equipment and crew move to your site, set up and ready to run.
+              Agree the scope and schedule, then arrange equipment, setup, and personnel.
             </p>
             <span class="process-ghost-num" aria-hidden="true">02</span>
           </article>
@@ -1219,9 +1409,9 @@
           <!-- Step 03 -->
           <article class="process-card" data-step="3">
             <span class="process-step-badge">STEP 03</span>
-            <h3 class="process-card-title">On-Site Production</h3>
+            <h3 class="process-card-title">Manufacture</h3>
             <p class="process-card-desc">
-              Bricks, panels, or pavers cast to spec, right there on location, batch after batch.
+              Produce the agreed materials and coordinate curing and quality checks.
             </p>
             <span class="process-ghost-num" aria-hidden="true">03</span>
           </article>
@@ -1231,7 +1421,7 @@
             <span class="process-step-badge">STEP 04</span>
             <h3 class="process-card-title">Handover</h3>
             <p class="process-card-desc">
-              Cured on-site, quality-checked, and ready to build with. No transport, no transit damage.
+              Confirm quantities and inspection records for project use.
             </p>
             <span class="process-ghost-num" aria-hidden="true">04</span>
           </article>
@@ -1248,12 +1438,12 @@
         <div class="where-grid">
           <!-- Left Column: Copy, Metrics & Tags -->
           <div class="where-content-col">
-            <h2 class="where-title">Where we work</h2>
+            <h2 class="where-title">Established regional experience. Wider mobilisation by assessment.</h2>
             <p class="where-lead-p">
-              These are the places we've already built in, not the limit of where we go.
+              Our project experience spans Telangana, Andhra Pradesh, Tamil Nadu, Maharashtra, and Karnataka.
             </p>
             <p class="where-sub-p">
-              If your project is outside this map, we mobilize to you, anywhere in India.
+              Projects in other locations are assessed based on scope, site conditions, and mobilisation feasibility.
             </p>
 
             <!-- Metrics Row (5 States, 23 Districts, 29 Locations) -->
@@ -1319,6 +1509,163 @@
       </div>
     </section>
 
+    
+    <!-- =========================================================================
+         SECTION · FREQUENTLY ASKED QUESTIONS (#faq)
+         Direct answers for buyer and project engineer planning
+         ========================================================================= -->
+    <section class="faq-section" id="faq" aria-labelledby="faq-title">
+      <div class="container">
+        
+        <div class="faq-header-row">
+          <div class="faq-header-content">
+            <div class="section-eyebrow-row">
+              <svg class="mlr-symbol section-eyebrow-symbol" viewBox="0 0 116 117" fill="none" aria-hidden="true">
+                <polygon points="45,0 116,0 116,60 55,117 55,60 0,60" fill="var(--green)"/>
+              </svg>
+              <span class="section-eyebrow">FAQ</span>
+            </div>
+            <h2 class="faq-title" id="faq-title">
+              Direct answers for <span class="text-green">project planning.</span>
+            </h2>
+            <p class="faq-subtitle">
+              Essential operational criteria for on-site mobilisation, utility setup, testing, and delivery.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-accordion-container" id="faqAccordion">
+
+          <!-- FAQ Item 01: Minimum Requirement -->
+          <div class="faq-item">
+            <button class="faq-trigger" aria-expanded="true" aria-controls="faq-ans-1" id="faq-btn-1">
+              <span class="faq-num">01</span>
+              <span class="faq-question">What is the minimum requirement for on-site manufacturing?</span>
+              <span class="faq-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" class="faq-vert-line"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </span>
+            </button>
+            <div class="faq-panel open" id="faq-ans-1" role="region" aria-labelledby="faq-btn-1">
+              <div class="faq-answer-inner">
+                <p>On-site equipment and crew mobilisation is generally viable for projects requiring <strong>30,000 to 50,000+ CC bricks</strong>, <strong>1,000+ running meters of precast fencing</strong>, or <strong>5,000+ sq meters of paver blocks</strong>. For requirements below this threshold, materials can be supplied directly from our nearest operational regional manufacturing facility.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ Item 02: Space, Water, Power, and Access -->
+          <div class="faq-item">
+            <button class="faq-trigger" aria-expanded="false" aria-controls="faq-ans-2" id="faq-btn-2">
+              <span class="faq-num">02</span>
+              <span class="faq-question">What space, water, power, and access requirements are needed?</span>
+              <span class="faq-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" class="faq-vert-line"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </span>
+            </button>
+            <div class="faq-panel" id="faq-ans-2" role="region" aria-labelledby="faq-btn-2">
+              <div class="faq-answer-inner">
+                <p>To establish an on-site mobile manufacturing yard, your site needs:</p>
+                <ul class="faq-specs-list">
+                  <li><strong>Space:</strong> Flat, compacted yard area of approximately 8,000 to 15,000 sq ft for casting machinery, raw material aggregates, and curing stacks.</li>
+                  <li><strong>Water:</strong> Continuous water supply for concrete batching and systematic curing.</li>
+                  <li><strong>Power:</strong> 3-phase commercial electric connection (approx. 25–40 HP depending on setup) or designated space for a dedicated diesel generator.</li>
+                  <li><strong>Access:</strong> Clear, unhindered heavy vehicle access for tippers and bulk cement delivery trucks.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ Item 03: Smaller-Order Supply Options -->
+          <div class="faq-item">
+            <button class="faq-trigger" aria-expanded="false" aria-controls="faq-ans-3" id="faq-btn-3">
+              <span class="faq-num">03</span>
+              <span class="faq-question">What are the supply options for smaller orders?</span>
+              <span class="faq-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" class="faq-vert-line"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </span>
+            </button>
+            <div class="faq-panel" id="faq-ans-3" role="region" aria-labelledby="faq-btn-3">
+              <div class="faq-answer-inner">
+                <p>If your volume is below the mobilisation threshold or your site cannot accommodate a mobile setup, you can still source materials through MLR Infra. We supply precast compound walls, CC bricks, and paver blocks directly from our established regional production hubs across Telangana, Andhra Pradesh, and nearby hubs, palletised and delivered by road transport.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ Item 04: Custom Sizes and Mould Availability -->
+          <div class="faq-item">
+            <button class="faq-trigger" aria-expanded="false" aria-controls="faq-ans-4" id="faq-btn-4">
+              <span class="faq-num">04</span>
+              <span class="faq-question">Can you produce custom sizes and bespoke moulds?</span>
+              <span class="faq-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" class="faq-vert-line"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </span>
+            </button>
+            <div class="faq-panel" id="faq-ans-4" role="region" aria-labelledby="faq-btn-4">
+              <div class="faq-answer-inner">
+                <p>Yes. We cast directly to architectural drawings. Custom moulds for bespoke brick dimensions, specific wall thicknesses (100mm, 150mm, 200mm, 225mm), interlocking profiles, heavy-duty paver shapes (80mm/100mm), and boundary fence heights (up to 6.6 ft, 8 ft, or 10 ft with razor wire posts) can be fabricated and deployed to your project.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ Item 05: Mobilisation and Production Scheduling -->
+          <div class="faq-item">
+            <button class="faq-trigger" aria-expanded="false" aria-controls="faq-ans-5" id="faq-btn-5">
+              <span class="faq-num">05</span>
+              <span class="faq-question">How does mobilisation and production scheduling work?</span>
+              <span class="faq-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" class="faq-vert-line"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </span>
+            </button>
+            <div class="faq-panel" id="faq-ans-5" role="region" aria-labelledby="faq-btn-5">
+              <div class="faq-answer-inner">
+                <p>Once site feasibility is confirmed and scope is agreed, mobilisation follows a predictable timeline:</p>
+                <ul class="faq-specs-list">
+                  <li><strong>Setup (Days 1–7):</strong> Machine transit, staging bed assembly, electrical and water connections, and raw material aggregate staging.</li>
+                  <li><strong>Commissioning (Days 8–12):</strong> Test batching, calibration of mix proportions, and operator crew briefing.</li>
+                  <li><strong>Continuous Production:</strong> Steady daily output (up to 4,000+ units/day) with batch curing scheduled to match your construction consumption rate.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ Item 06: Quality Checks and Quotation Requirements -->
+          <div class="faq-item">
+            <button class="faq-trigger" aria-expanded="false" aria-controls="faq-ans-6" id="faq-btn-6">
+              <span class="faq-num">06</span>
+              <span class="faq-question">What quality checks are performed, and what is needed for a quote?</span>
+              <span class="faq-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" class="faq-vert-line"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </span>
+            </button>
+            <div class="faq-panel" id="faq-ans-6" role="region" aria-labelledby="faq-btn-6">
+              <div class="faq-answer-inner">
+                <p>Every on-site casting batch undergoes strict quality control, including aggregate sieve analysis, slump testing, dimension tolerance checks, and 7-day and 28-day concrete cube compressive strength tests. Formal quality inspection logs and test reports are submitted directly to your project QA/QC team.</p>
+                <p class="mt-2"><strong>To receive a detailed project quotation:</strong> Share your project location (city/district), product type, estimated quantity or area, and target commencement dates through the enquiry form below.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
     <!-- =========================================================================
          SECTION 10 · CONTACT & ESTIMATOR
          Interactive Material Estimator, Rapid Enquiry Form, Regional Hubs, and Architectural Footer
@@ -1336,9 +1683,9 @@
 
         <!-- Section Header -->
         <div class="contact-section-header">
-          <h2 class="contact-section-title" id="contact-title">Know the numbers before you order</h2>
+          <h2 class="contact-section-title" id="contact-title">Plan your material requirement.</h2>
           <p class="contact-section-sub">
-            Work out how many bricks or fence panels your site needs, then send the figures straight to our team.
+            Enter your project dimensions to calculate an indicative quantity. Share the estimate with our team for specification review and a quotation.
           </p>
         </div>
 
@@ -1347,9 +1694,9 @@
           <div class="estimator-card-head">
             <div class="estimator-head-text">
               <span class="estimator-step">01 / Estimate</span>
-              <h3 class="estimator-card-title">Material calculator</h3>
+              <h3 class="estimator-card-title">Plan your material requirement.</h3>
               <p class="estimator-card-subtitle">
-                Pick a product, enter your wall size, and get a unit count with wastage included.
+                Enter your project dimensions to calculate an indicative quantity. Share the estimate with our team for specification review and a quotation.
               </p>
             </div>
           </div>
@@ -1506,6 +1853,7 @@
                     </svg>
                   </span>
                 </button>
+                <p class="calculator-disclaimer-note"><strong>Note:</strong> Indicative quantity only. Final requirements depend on openings, installation details, approved dimensions, and project-specific allowances.</p>
                 <span class="prefill-notice">Pre-fills the enquiry form below with these exact parameters.</span>
               </div>
             </div>
@@ -1517,9 +1865,9 @@
           <!-- Left Side: Hubs & Address -->
           <div class="contact-info-side">
             <span class="estimator-step estimator-step--on-ink">02 / Enquire</span>
-            <h3 class="contact-heading">Tell us about your site</h3>
+            <h3 class="contact-heading">Tell us what your project needs.</h3>
             <p class="contact-subtext">
-              Share the location and the volume you need. Our team reviews every enquiry and calls you back with a quote and a mobilization plan.
+              Share your location, product requirement, approximate quantity, and target dates. Our team will review the scope and discuss specifications, pricing, and mobilisation requirements.
             </p>
 
             <div class="contact-hubs-list">
@@ -1584,7 +1932,7 @@
                 </div>
 
                 <button type="submit" id="btn-submit-enquiry" class="btn btn-primary w-full">
-                  <span class="btn-label">Send Enquiry</span>
+                  <span class="btn-label">Request a Project Quote</span>
                   <span class="btn-arrow-block" aria-hidden="true">
                     <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M3 8h10M9 4l4 4-4 4"/>
@@ -1618,10 +1966,10 @@
         <div class="footer-top-row">
           <div class="footer-brand-col">
             <a href="#home" class="footer-logo-link" aria-label="MLR Building Materials Home">
-              <img src="assets/mlr-logo-white.svg" alt="MLR Building Materials" class="footer-logo" width="186" height="48">
+              <img src="assets/mlr-logo-white.svg?v=3" alt="MLR Building Materials" class="footer-logo" width="186" height="48">
             </a>
             <h3 class="footer-headline">Building stronger foundations, one site at a time.</h3>
-            <p class="footer-brand-tag">On-site CC bricks, pavers and precast fencing.</p>
+            <p class="footer-brand-tag">Concrete products and coordinated site support for construction projects.</p>
           </div>
 
           <div class="footer-links-col">
@@ -1632,6 +1980,7 @@
               <li><a href="#products">Products</a></li>
               <li><a href="#projects">Projects</a></li>
               <li><a href="#how-we-work">How We Work</a></li>
+              <li><a href="#faq">FAQ</a></li>
               <li><a href="#contact">Contact</a></li>
             </ul>
           </div>
@@ -1656,7 +2005,7 @@
           </div>
         </div>
 
-        <p class="footer-mega" aria-hidden="true">We bring the <span>factory</span>.</p>
+        <p class="footer-mega" aria-hidden="true">We bring the factory to your site.</p>
 
         <div class="footer-bottom-row">
           <div class="footer-copy">
@@ -1672,8 +2021,10 @@
     </div>
   </footer>
 
+  <!-- Lenis Smooth Scroll Engine -->
+  <script src="assets/lenis.min.js"></script>
   <!-- Vanilla JS Engine -->
-  <script src="main.js?v=2"></script>
+  <script src="main.js?v=3"></script>
 </body>
 
 </html>
