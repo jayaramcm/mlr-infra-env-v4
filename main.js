@@ -584,6 +584,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('resize', updateCarouselState, { passive: true });
     updateCarouselState();
+
+    // Floating "Scroll" cue that follows the pointer over the slider
+    const projCue = document.getElementById('projScrollCue');
+    const projWrap = projTrack.closest('.projects-slider-wrap');
+    if (projCue && projWrap && window.matchMedia('(hover: hover)').matches) {
+      projWrap.addEventListener('mousemove', (e) => {
+        const rect = projWrap.getBoundingClientRect();
+        projCue.style.left = (e.clientX - rect.left) + 'px';
+        projCue.style.top = (e.clientY - rect.top) + 'px';
+        projCue.classList.toggle('is-hidden', !!e.target.closest('.proj-nav-btn'));
+      });
+      projWrap.addEventListener('mouseenter', () => projCue.classList.add('is-active'));
+      projWrap.addEventListener('mouseleave', () => projCue.classList.remove('is-active'));
+    }
   }
 
   /* =========================================================================
@@ -683,41 +697,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ==========================================================================
-     8. INTERACTIVE ESTIMATOR CALCULATOR (Dual Mode Engine from MLR v2)
+     8. INTERACTIVE ESTIMATOR CALCULATOR
      ========================================================================== */
-  const modeWallBtn = document.getElementById('mode-wall-btn');
-  const modeBrickBtn = document.getElementById('mode-brick-btn');
-  const modeWallInputs = document.getElementById('mode-wall-inputs');
-  const modeBrickInputs = document.getElementById('mode-brick-inputs');
-
-  let currentCalcMode = 'wall';
-
-  if (modeWallBtn && modeBrickBtn) {
-    modeWallBtn.addEventListener('click', () => {
-      currentCalcMode = 'wall';
-      modeWallBtn.classList.add('active');
-      modeWallBtn.setAttribute('aria-selected', 'true');
-      modeBrickBtn.classList.remove('active');
-      modeBrickBtn.setAttribute('aria-selected', 'false');
-
-      if (modeWallInputs) modeWallInputs.classList.remove('hidden');
-      if (modeBrickInputs) modeBrickInputs.classList.add('hidden');
-      calculateEstimator();
-    });
-
-    modeBrickBtn.addEventListener('click', () => {
-      currentCalcMode = 'brick';
-      modeBrickBtn.classList.add('active');
-      modeBrickBtn.setAttribute('aria-selected', 'true');
-      modeWallBtn.classList.remove('active');
-      modeWallBtn.setAttribute('aria-selected', 'false');
-
-      if (modeBrickInputs) modeBrickInputs.classList.remove('hidden');
-      if (modeWallInputs) modeWallInputs.classList.add('hidden');
-      calculateEstimator();
-    });
-  }
-
   const calcCategory = document.getElementById('calc-category');
   const categoryBricksGroup = document.getElementById('category-bricks-group');
   const categoryFencingGroup = document.getElementById('category-fencing-group');
@@ -738,9 +719,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const wallHeight = document.getElementById('wall-height');
   const calcWastage = document.getElementById('calc-wastage');
   const wastageDisplay = document.getElementById('wastage-display');
-
-  const runLength = document.getElementById('run-length');
-  const runCourses = document.getElementById('run-courses');
 
   const resTotalUnits = document.getElementById('res-total-units');
   const resUnitLabel = document.getElementById('res-unit-label');
@@ -793,7 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const allCalcInputs = [
     calcBrickType, calcBrickSize, customLen, customWid, customHt,
     calcFenceType, calcFenceHeight, customFenceHt,
-    wallLength, wallHeight, runLength, runCourses
+    wallLength, wallHeight
   ];
   allCalcInputs.forEach((input) => {
     if (input) {
@@ -812,7 +790,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let specDescription = '';
     let summaryHtml = '';
 
-    if (currentCalcMode === 'wall') {
+    {
       const lenFt = Math.max(1, parseFloat(wallLength ? wallLength.value : 100) || 0);
       const htFt = Math.max(1, parseFloat(wallHeight ? wallHeight.value : 10) || 0);
       areaSqFt = Math.round(lenFt * htFt);
@@ -874,34 +852,6 @@ document.addEventListener('DOMContentLoaded', () => {
         summaryHtml = `You'll need approximately <strong>${totalUnits.toLocaleString()} modular panels</strong> and <strong>${postsCount} posts</strong> for <strong>${lenFt} running ft (${areaSqFt.toLocaleString()} sq ft)</strong>.`;
       }
 
-    } else {
-      const rLen = Math.max(1, parseFloat(runLength ? runLength.value : 100) || 0);
-      const courses = Math.max(1, parseFloat(runCourses ? runCourses.value : 15) || 1);
-
-      let brickLenMm = 400;
-      let brickHtMm = 200;
-      const sizeVal = calcBrickSize ? calcBrickSize.value : '400x200x200';
-      if (sizeVal === '400x200x200') {
-        brickLenMm = 400; brickHtMm = 200;
-      } else if (sizeVal === '400x200x150') {
-        brickLenMm = 400; brickHtMm = 150;
-      } else if (sizeVal === '230x110x75') {
-        brickLenMm = 230; brickHtMm = 75;
-      }
-
-      const brickLenIn = brickLenMm * 0.0393701;
-      const brickHtIn = brickHtMm * 0.0393701;
-      const mortarJointIn = 0.394;
-
-      const bricksPerRft = 12 / (brickLenIn + mortarJointIn);
-      const estimatedHtFt = (courses * (brickHtIn + mortarJointIn)) / 12;
-      areaSqFt = Math.round(rLen * estimatedHtFt);
-
-      totalUnits = Math.ceil(bricksPerRft * rLen * courses * (1 + wastagePct));
-      unitName = 'TOTAL BRICKS';
-      specDescription = `${rLen} ft wall &bull; ${courses} courses &bull; ~${bricksPerRft.toFixed(1)} bricks/ft`;
-
-      summaryHtml = `You'll need approximately <strong>${totalUnits.toLocaleString()} bricks</strong> for <strong>${rLen} ft</strong> over <strong>${courses} courses</strong> (~${areaSqFt} sq ft).`;
     }
 
     if (resTotalUnits) resTotalUnits.textContent = totalUnits.toLocaleString();
