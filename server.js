@@ -1,9 +1,12 @@
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 
 const PORT = 3030;
 const ROOT = __dirname;
+const RECAPTCHA_SECRET_KEY = '6LcRvfMtAAAAABEUnxF_1qUJuoZ0y-EknmZt5euB';
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -19,9 +22,11 @@ const MIME_TYPES = {
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
   '.ttf': 'font/ttf',
-  '.mp4': 'video/mp4',
-  '.webm': 'video/webm'
+  '.txt': 'text/plain; charset=utf-8',
+  '.xml': 'application/xml; charset=utf-8'
 };
+
+const COMPRESSIBLE_EXTS = new Set(['.html', '.css', '.js', '.json', '.svg', '.txt', '.xml']);
 
 const requestHandler = (req, res) => {
   let decodedPath;
@@ -33,16 +38,91 @@ const requestHandler = (req, res) => {
     return;
   }
 
-  if (req.url.startsWith('/debug')) {
-    console.log('DEBUG_LOG:', decodedPath);
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('ok');
+  // Handle CORS Preflight
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    });
+    res.end();
+    return;
+  }
+
+  // reCAPTCHA verification & enquiry API endpoint
+  if (req.method === 'POST' && (decodedPath === '/api/verify-captcha' || decodedPath === '/api/submit-enquiry')) {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk;
+      if (body.length > 1e6) {
+        req.destroy();
+      }
+    });
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const token = payload.token || payload['g-recaptcha-response'];
+
+        if (!token) {
+          res.writeHead(400, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+          res.end(JSON.stringify({ success: false, error: 'Missing reCAPTCHA token' }));
+          return;
+        }
+
+        const postData = `secret=${encodeURIComponent(RECAPTCHA_SECRET_KEY)}&response=${encodeURIComponent(token)}`;
+        const verifyReq = https.request({
+          hostname: 'www.google.com',
+          path: '/recaptcha/api/siteverify',
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': Buffer.byteLength(postData)
+          }
+        }, (verifyRes) => {
+          let gData = '';
+          verifyRes.on('data', c => gData += c);
+          verifyRes.on('end', () => {
+            try {
+              const gJson = JSON.parse(gData);
+              if (gJson.success) {
+                res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+                res.end(JSON.stringify({ success: true, message: 'reCAPTCHA verified successfully', data: payload }));
+              } else {
+                res.writeHead(400, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+                res.end(JSON.stringify({ success: false, error: 'reCAPTCHA validation failed', codes: gJson['error-codes'] }));
+              }
+            } catch (err) {
+              res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+              res.end(JSON.stringify({ success: false, error: 'Failed to parse Google verification response' }));
+            }
+          });
+        });
+
+        verifyReq.on('error', (err) => {
+          res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+          res.end(JSON.stringify({ success: false, error: err.message }));
+        });
+
+        verifyReq.write(postData);
+        verifyReq.end();
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({ success: false, error: 'Invalid JSON request payload' }));
+      }
+    });
     return;
   }
 
   let reqPath = decodedPath;
   if (reqPath === '/' || reqPath === '') {
     reqPath = '/index.html';
+  } else if (reqPath === '/blog' || reqPath === '/blog/') {
+    reqPath = '/blog.html';
+  } else if (
+    reqPath === '/reliable-concrete-paver-blocks-supplier-hyderabad' ||
+    reqPath === '/reliable-concrete-paver-blocks-supplier-hyderabad/'
+  ) {
+    reqPath = '/reliable-concrete-paver-blocks-supplier-hyderabad.html';
   }
 
   const safePath = path.normalize(reqPath).replace(/^(\.\.[\/\\])+/, '');
@@ -58,56 +138,63 @@ const requestHandler = (req, res) => {
     const ext = path.extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
     const totalSize = stats.size;
-    const range = req.headers.range;
+    const etag = `W/"${totalSize.toString(16)}-${Math.floor(stats.mtimeMs).toString(16)}"`;
+    const isAsset = reqPath.startsWith('/assets/');
+    const cacheControl = isAsset
+      ? 'public, max-age=86400, stale-while-revalidate=604800'
+      : 'public, max-age=0, must-revalidate';
 
-    if (range) {
-      const parts = range.replace(/bytes=/, '').split('-');
-      const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : totalSize - 1;
-      const chunkSize = (end - start) + 1;
-
-      res.writeHead(206, {
-        'Content-Range': `bytes ${start}-${end}/${totalSize}`,
-        'Accept-Ranges': 'bytes',
-        'Content-Length': chunkSize,
-        'Content-Type': contentType,
+    if (req.headers['if-none-match'] === etag) {
+      res.writeHead(304, {
+        'ETag': etag,
+        'Cache-Control': cacheControl,
         'Access-Control-Allow-Origin': '*'
       });
-
-      const fileStream = fs.createReadStream(filePath, { start, end });
-      fileStream.on('error', (streamErr) => {
-        console.error('File stream error:', streamErr.message);
-        if (!res.headersSent) {
-          res.writeHead(500);
-        }
-        res.end();
-      });
-      res.on('close', () => {
-        fileStream.destroy();
-      });
-      fileStream.pipe(res);
-    } else {
-      res.writeHead(200, {
-        'Content-Length': totalSize,
-        'Accept-Ranges': 'bytes',
-        'Content-Type': contentType,
-        'Cache-Control': 'no-cache',
-        'Access-Control-Allow-Origin': '*'
-      });
-
-      const stream = fs.createReadStream(filePath);
-      stream.on('error', (streamErr) => {
-        console.error('Stream error:', streamErr.message);
-        if (!res.headersSent) {
-          res.writeHead(500);
-        }
-        res.end();
-      });
-      res.on('close', () => {
-        stream.destroy();
-      });
-      stream.pipe(res);
+      res.end();
+      return;
     }
+
+    const acceptEncoding = req.headers['accept-encoding'] || '';
+    const shouldCompress = COMPRESSIBLE_EXTS.has(ext) && totalSize > 256 && !req.headers.range;
+
+    if (shouldCompress && (acceptEncoding.includes('br') || acceptEncoding.includes('gzip'))) {
+      const useBrotli = acceptEncoding.includes('br');
+      res.writeHead(200, {
+        'Content-Type': contentType,
+        'Content-Encoding': useBrotli ? 'br' : 'gzip',
+        'Vary': 'Accept-Encoding',
+        'ETag': etag,
+        'Cache-Control': cacheControl,
+        'Access-Control-Allow-Origin': '*'
+      });
+
+      const rawStream = fs.createReadStream(filePath);
+      const compressor = useBrotli
+        ? zlib.createBrotliCompress({ params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 4 } })
+        : zlib.createGzip({ level: 6 });
+
+      rawStream.on('error', () => res.end());
+      res.on('close', () => rawStream.destroy());
+      rawStream.pipe(compressor).pipe(res);
+      return;
+    }
+
+    res.writeHead(200, {
+      'Content-Length': totalSize,
+      'Accept-Ranges': 'bytes',
+      'Content-Type': contentType,
+      'ETag': etag,
+      'Cache-Control': cacheControl,
+      'Access-Control-Allow-Origin': '*'
+    });
+
+    const stream = fs.createReadStream(filePath);
+    stream.on('error', () => {
+      if (!res.headersSent) res.writeHead(500);
+      res.end();
+    });
+    res.on('close', () => stream.destroy());
+    stream.pipe(res);
   });
 };
 

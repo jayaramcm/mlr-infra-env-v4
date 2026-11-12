@@ -97,15 +97,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 1. Immediately determine current section on load/refresh
+  const isHomePage = Boolean(document.getElementById('home'));
   const currentScrollY = window.scrollY || window.pageYOffset || 0;
   const isActuallyScrolled = currentScrollY > 60;
-  const initialIndex = isActuallyScrolled ? calculateActiveIndex() : 0;
+  const initialIndex = isHomePage ? (isActuallyScrolled ? calculateActiveIndex() : 0) : 0;
   let currentIndex = initialIndex;
   let isTransitioning = false;
   let pendingIndex = null;
 
   // 2. Set initial text directly without slide animation
-  if (roller) {
+  if (roller && isHomePage) {
     const initialSpan = roller.querySelector('.nav-indicator-text.current') || roller.querySelector('.nav-indicator-text');
     if (initialSpan) {
       initialSpan.className = 'nav-indicator-text current';
@@ -115,13 +116,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 3. Immediately sync active link highlight
-  navLinks.forEach((link, idx) => {
-    link.classList.toggle('active', idx === initialIndex);
-  });
-  drawerLinks.forEach((link, idx) => {
-    link.classList.toggle('active', idx === initialIndex);
-  });
+  // 3. Immediately sync active link highlight on home page
+  if (isHomePage) {
+    navLinks.forEach((link, idx) => {
+      link.classList.toggle('active', idx === initialIndex);
+    });
+    drawerLinks.forEach((link, idx) => {
+      const href = link.getAttribute('href') || '';
+      if (href.startsWith('#')) {
+        link.classList.toggle('active', idx === initialIndex);
+      }
+    });
+  }
 
   // 4. Set initial scrolled/collapsed state immediately
   if (navbar) {
@@ -132,9 +138,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  saveNavState(isActuallyScrolled, sections[initialIndex].label, initialIndex);
-
-  let isNavbarHovered = false;
+  if (isHomePage) {
+    saveNavState(isActuallyScrolled, sections[initialIndex].label, initialIndex);
+  }
 
   function updateNavbar(options) {
     if (!navbar || !roller) return;
@@ -156,6 +162,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    if (!isHomePage) return;
+
     // Calculate active section by 75% threshold
     const targetIndex = calculateActiveIndex();
     saveNavState(isScrolled, sections[targetIndex].label, targetIndex);
@@ -174,7 +182,10 @@ document.addEventListener('DOMContentLoaded', () => {
           link.classList.toggle('active', idx === targetIndex);
         });
         drawerLinks.forEach((link, idx) => {
-          link.classList.toggle('active', idx === targetIndex);
+          const href = link.getAttribute('href') || '';
+          if (href.startsWith('#')) {
+            link.classList.toggle('active', idx === targetIndex);
+          }
         });
       } else if (isTransitioning) {
         pendingIndex = targetIndex;
@@ -185,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function performTransition(fromIdx, toIdx) {
-    if (!roller) return;
+    if (!roller || !isHomePage) return;
     isTransitioning = true;
     const direction = toIdx > fromIdx ? 'down' : 'up';
 
@@ -213,7 +224,10 @@ document.addEventListener('DOMContentLoaded', () => {
       link.classList.toggle('active', idx === toIdx);
     });
     drawerLinks.forEach((link, idx) => {
-      link.classList.toggle('active', idx === toIdx);
+      const href = link.getAttribute('href') || '';
+      if (href.startsWith('#')) {
+        link.classList.toggle('active', idx === toIdx);
+      }
     });
 
     currentIndex = toIdx;
@@ -233,65 +247,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 240);
   }
 
-  // Expand ONLY when user hovers over section heading (.nav-center-indicator), NOT on logo or CTA
+  // Expand when user hovers over section heading (.nav-center-indicator),
+  // and once expanded, keep it expanded across the entire navbar (including logo & CTAs)
+  // until the cursor leaves the navbar completely.
   if (navbar && centerIndicator) {
     let collapseTimer = null;
 
-    centerIndicator.addEventListener('mouseenter', () => {
+    const clearCollapseTimer = () => {
       if (collapseTimer) {
         clearTimeout(collapseTimer);
         collapseTimer = null;
       }
+    };
+
+    centerIndicator.addEventListener('mouseenter', () => {
+      clearCollapseTimer();
       if (navbar.classList.contains('is-scrolled')) {
         navbar.classList.add('is-expanded');
       }
     });
 
-    // While user is moving around within the revealed desktop menu, keep it expanded
-    const navDesktop = navbar.querySelector('.nav-desktop');
-    if (navDesktop) {
-      navDesktop.addEventListener('mouseenter', () => {
-        if (collapseTimer) {
-          clearTimeout(collapseTimer);
-          collapseTimer = null;
-        }
-      });
-      navDesktop.addEventListener('mouseleave', () => {
-        if (navbar.classList.contains('is-expanded')) {
-          collapseTimer = setTimeout(() => {
-            navbar.classList.remove('is-expanded');
-          }, 200);
-        }
-      });
-    }
+    // Keep expanded while cursor is anywhere inside the navbar (menu, white space, logo, or CTAs)
+    navbar.addEventListener('mouseenter', () => {
+      clearCollapseTimer();
+    });
 
-    // Leaving the entire navbar collapses it after a gentle 200ms grace period
+    navbar.addEventListener('mousemove', () => {
+      if (navbar.classList.contains('is-expanded')) {
+        clearCollapseTimer();
+      }
+    });
+
+    // Collapse ONLY when the cursor leaves the entire navbar
     navbar.addEventListener('mouseleave', () => {
       if (navbar.classList.contains('is-expanded')) {
         collapseTimer = setTimeout(() => {
           navbar.classList.remove('is-expanded');
-        }, 200);
-      }
-    });
-
-    // Logo and CTA: Hovering over them must NOT trigger expansion
-    const navBrand = navbar.querySelector('.nav-brand');
-    const navRight = navbar.querySelector('.nav-right');
-    [navBrand, navRight].forEach(el => {
-      if (el) {
-        el.addEventListener('mouseenter', (e) => {
-          // If not currently expanded, ensure it stays collapsed
-          if (!navbar.classList.contains('is-expanded')) {
-            e.stopPropagation();
-          }
-        });
+        }, 180);
       }
     });
 
     // Collapse immediately when clicking any navigation link or action
     navbar.querySelectorAll('a, button').forEach(el => {
       el.addEventListener('click', () => {
-        if (collapseTimer) clearTimeout(collapseTimer);
+        clearCollapseTimer();
         navbar.classList.remove('is-expanded');
       });
     });
@@ -434,43 +433,192 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 3. STATS COUNT UP ONCE WHEN FIRST VISIBLE (DESIGN.md Section 8)
-  const statNumbers = document.querySelectorAll('.trust-stat-number');
+  // 3. 2G NETWORK DETECTION & SKELETAL LOADING / UNABLE-TO-LOAD FALLBACK SYSTEM
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const isSlowNetwork = () => Boolean(
+    !navigator.onLine ||
+    (conn && (conn.saveData || ['slow-2g', '2g'].includes(conn.effectiveType)))
+  );
 
-  if (!prefersReducedMotion && 'IntersectionObserver' in window) {
-    const statsObserver = new IntersectionObserver((entries, observer) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const el = entry.target;
-          const targetNum = parseInt(el.getAttribute('data-target'), 10);
-          const suffix = el.getAttribute('data-suffix') || '';
+  const networkBanner = document.getElementById('networkStatusBanner');
+  const networkStatusText = document.getElementById('networkStatusText');
+  const networkRetryBtn = document.getElementById('networkRetryBtn');
+  const skeletonRegistry = [];
 
-          if (!isNaN(targetNum)) {
-            let current = 0;
-            const duration = 1200; // 1.2s count up
-            const stepTime = 30;
-            const steps = duration / stepTime;
-            const increment = targetNum / steps;
-
-            const timer = setInterval(() => {
-              current += increment;
-              if (current >= targetNum) {
-                current = targetNum;
-                clearInterval(timer);
-                el.textContent = `${Math.round(current)}${suffix}`;
-              } else {
-                el.textContent = `${Math.round(current)}${suffix}`;
-              }
-            }, stepTime);
-          }
-
-          observer.unobserve(el); // Count up once only!
+  function updateNetworkBanner() {
+    if (!networkBanner || !networkStatusText) return;
+    const failedCount = document.querySelectorAll('[data-skeleton].is-skeleton-error').length;
+    if (!navigator.onLine) {
+      networkStatusText.textContent = 'Offline — Showing skeletal blueprint view';
+      networkBanner.hidden = false;
+      requestAnimationFrame(() => networkBanner.classList.add('is-visible'));
+    } else if (failedCount > 0) {
+      networkStatusText.textContent = `${failedCount} visual asset${failedCount > 1 ? 's' : ''} unable to load — Skeletal fallback active`;
+      networkBanner.hidden = false;
+      requestAnimationFrame(() => networkBanner.classList.add('is-visible'));
+    } else if (isSlowNetwork()) {
+      networkStatusText.textContent = '2G / Data-Saver mode — Lightweight skeletal stream active';
+      networkBanner.hidden = false;
+      requestAnimationFrame(() => networkBanner.classList.add('is-visible'));
+    } else {
+      networkBanner.classList.remove('is-visible');
+      setTimeout(() => {
+        if (!networkBanner.classList.contains('is-visible')) {
+          networkBanner.hidden = true;
         }
-      });
-    }, { threshold: 0.3 });
-
-    statNumbers.forEach(stat => statsObserver.observe(stat));
+      }, 260);
+    }
   }
+
+  function ensureSkeletonOverlay(container) {
+    let overlay = container.querySelector(':scope > .skeleton-overlay');
+    if (overlay) return overlay;
+
+    const label = container.getAttribute('data-skeleton') || 'Visual Asset';
+    overlay = document.createElement('div');
+    overlay.className = 'skeleton-overlay';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.innerHTML = `
+      <div class="skeleton-wireframe">
+        <span class="skeleton-bar skeleton-bar--lg"></span>
+        <span class="skeleton-bar skeleton-bar--md"></span>
+        <span class="skeleton-bar skeleton-bar--sm"></span>
+      </div>
+      <span class="skeleton-status-label">Loading ${label}...</span>
+      <button type="button" class="skeleton-retry-btn">Retry Load</button>
+    `;
+    container.appendChild(overlay);
+    return overlay;
+  }
+
+  function markSkeletonLoaded(container) {
+    if (!container) return;
+    container.classList.remove('is-skeleton', 'is-skeleton-error');
+    container.classList.add('is-loaded');
+    const statusEl = container.querySelector(':scope > .skeleton-overlay .skeleton-status-label');
+    if (statusEl) {
+      statusEl.textContent = container.getAttribute('data-skeleton') || 'Loaded';
+    }
+    updateNetworkBanner();
+  }
+
+  function markSkeletonError(container, reason) {
+    if (!container) return;
+    ensureSkeletonOverlay(container);
+    container.classList.remove('is-skeleton', 'is-loaded');
+    container.classList.add('is-skeleton-error');
+    const label = container.getAttribute('data-skeleton') || 'Media';
+    const statusEl = container.querySelector(':scope > .skeleton-overlay .skeleton-status-label');
+    if (statusEl) {
+      statusEl.textContent = reason || `${label} — Unable to load (Skeletal view)`;
+    }
+    updateNetworkBanner();
+  }
+
+  function markSkeletonLoading(container) {
+    if (!container) return;
+    ensureSkeletonOverlay(container);
+    container.classList.remove('is-skeleton-error', 'is-loaded');
+    container.classList.add('is-skeleton');
+    const label = container.getAttribute('data-skeleton') || 'Media';
+    const statusEl = container.querySelector(':scope > .skeleton-overlay .skeleton-status-label');
+    if (statusEl) {
+      statusEl.textContent = `Loading ${label}...`;
+    }
+    updateNetworkBanner();
+  }
+
+  // Bind all image-based [data-skeleton] containers
+  document.querySelectorAll('[data-skeleton]').forEach((container) => {
+    const overlay = ensureSkeletonOverlay(container);
+    if (container.id === 'home') return; // Managed by Hero Canvas engine below
+
+    const img = container.querySelector('img');
+    if (!img) {
+      markSkeletonLoaded(container);
+      return;
+    }
+
+    const origSrc = img.getAttribute('src');
+    let loadTimeout = null;
+
+    const clearTimer = () => {
+      if (loadTimeout) {
+        clearTimeout(loadTimeout);
+        loadTimeout = null;
+      }
+    };
+
+    const startTimeoutWatch = () => {
+      clearTimer();
+      // If image takes longer than 8s (or 12s on 2G) while in view, transition to skeletal unable-to-load state
+      const timeoutMs = isSlowNetwork() ? 12000 : 8000;
+      loadTimeout = setTimeout(() => {
+        if (!img.complete || img.naturalWidth === 0) {
+          markSkeletonError(container);
+        }
+      }, timeoutMs);
+    };
+
+    const onImgLoad = () => {
+      clearTimer();
+      if (img.naturalWidth > 0) {
+        markSkeletonLoaded(container);
+      } else {
+        markSkeletonError(container);
+      }
+    };
+
+    const onImgError = () => {
+      clearTimer();
+      markSkeletonError(container);
+    };
+
+    img.addEventListener('load', onImgLoad);
+    img.addEventListener('error', onImgError);
+
+    const retryLoad = () => {
+      if (!origSrc) return;
+      markSkeletonLoading(container);
+      startTimeoutWatch();
+      const sep = origSrc.includes('?') ? '&' : '?';
+      img.src = `${origSrc}${sep}retry=${Date.now()}`;
+    };
+
+    const retryBtn = overlay.querySelector('.skeleton-retry-btn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        retryLoad();
+      });
+    }
+
+    skeletonRegistry.push({ container, img, retryLoad });
+
+    // Check immediate completion state
+    if (img.complete) {
+      if (img.naturalWidth > 0) {
+        markSkeletonLoaded(container);
+      } else {
+        markSkeletonError(container);
+      }
+    } else if (!navigator.onLine) {
+      markSkeletonError(container, 'Offline — Skeletal view');
+    } else if ('IntersectionObserver' in window) {
+      const watchObserver = new IntersectionObserver((entries, obs) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            if (!img.complete) startTimeoutWatch();
+            obs.unobserve(container);
+          }
+        });
+      }, { rootMargin: '200px 0px' });
+      watchObserver.observe(container);
+    } else {
+      startTimeoutWatch();
+    }
+  });
 
   // 4. SECTION ENTRANCE MOTION (DESIGN.md Section 8)
   // One entrance animation per section at most: 12px rise + fade, 400ms, ease-out.
@@ -492,39 +640,35 @@ document.addEventListener('DOMContentLoaded', () => {
     animatedElements.forEach(el => el.classList.add('in-view'));
   }
 
-  // 5. HERO SCROLL-DRIVEN WEBP CANVAS ENGINE
-  // - Converts scroll position directly into WebP frame sequence
-  // - Zero random fallback photos or posters preloaded
-  // - Playback position is strictly bound to scroll progress (not a play button)
-  // - Butter-smooth 60fps canvas rendering with requestAnimationFrame
-  // - Instant frame 0 paint + progressive background preloading
+  // 5. HERO SCROLL-DRIVEN WEBP CANVAS ENGINE (75 HD 1280x720 WEBP FRAMES, PROGRESSIVE 2G-AWARE STREAMING)
   const canvas = document.getElementById('heroCanvas');
+  const heroSection = document.getElementById('home');
   if (canvas) {
     const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+    }
     const TOTAL_FRAMES = 75;
     const frames = new Array(TOTAL_FRAMES);
-    let currentRenderedIndex = -1;
     let targetIndex = 0;
     let isTicking = false;
+    let sequencePreloaded = false;
 
     // Helper to format frame path: assets/frames/frame_000.webp ... frame_074.webp
     const getFramePath = (i) => `assets/frames/frame_${String(i).padStart(3, '0')}.webp`;
 
-    // Render a frame onto canvas
     const drawFrame = (img) => {
-      if (!img || !img.complete || img.naturalWidth === 0) return;
+      if (!img || !img.complete || img.naturalWidth === 0 || !ctx) return;
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     };
 
-    // Draw the best available frame for target index
     const render = () => {
       isTicking = false;
       const targetImg = frames[targetIndex];
       if (targetImg && targetImg.complete && targetImg.naturalWidth > 0) {
         drawFrame(targetImg);
-        currentRenderedIndex = targetIndex;
       } else {
-        // Nearest loaded fallback
         let nearest = null;
         let minDiff = Infinity;
         for (let i = 0; i < TOTAL_FRAMES; i++) {
@@ -536,9 +680,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           }
         }
-        if (nearest) {
-          drawFrame(nearest);
-        }
+        if (nearest) drawFrame(nearest);
       }
     };
 
@@ -549,11 +691,50 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
 
-    // Calculate frame from scroll position
+    // Progressive two-pass batch preloader so 75 HD frames never choke the browser connection queue
+    const preloadFrames = () => {
+      if (sequencePreloaded) return;
+      sequencePreloaded = true;
+
+      // Order: stride-3 keyframes first (3, 6, 9...) for immediate scroll responsiveness, then in-between frames
+      const queue = [];
+      for (let i = 3; i < TOTAL_FRAMES; i += 3) queue.push(i);
+      for (let i = 1; i < TOTAL_FRAMES; i++) {
+        if (i % 3 !== 0) queue.push(i);
+      }
+
+      let cursor = 0;
+      const CONCURRENCY = isSlowNetwork() ? 2 : 8;
+
+      const loadNext = () => {
+        if (cursor >= queue.length) return;
+        const idx = queue[cursor++];
+        const img = new Image();
+        img.decoding = 'async';
+        img.src = getFramePath(idx);
+        img.onload = () => {
+          frames[idx] = img;
+          if (idx === targetIndex) requestRender();
+          loadNext();
+        };
+        img.onerror = () => {
+          loadNext();
+        };
+        frames[idx] = img;
+      };
+
+      for (let c = 0; c < CONCURRENCY; c++) {
+        loadNext();
+      }
+    };
+
     const updateScrollFrame = () => {
       const scrollY = window.scrollY || window.pageYOffset || 0;
-      const aboutSection = document.getElementById('about');
-      const maxScroll = aboutSection ? (aboutSection.offsetTop - 80) : (window.innerHeight * 0.9);
+      if (!sequencePreloaded && scrollY > 16 && navigator.onLine) {
+        preloadFrames();
+      }
+      const aboutEl = document.getElementById('about');
+      const maxScroll = aboutEl ? (aboutEl.offsetTop - 80) : (window.innerHeight * 0.9);
       const progress = Math.min(1, Math.max(0, scrollY / (maxScroll || 600)));
 
       const newTarget = Math.min(TOTAL_FRAMES - 1, Math.floor(progress * (TOTAL_FRAMES - 1)));
@@ -563,41 +744,116 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
 
-    // Step 1: Instantly load & paint frame 0 (Hero initial view)
-    const frame0 = new Image();
-    frame0.src = getFramePath(0);
-    frame0.onload = () => {
-      frames[0] = frame0;
-      drawFrame(frame0);
-      currentRenderedIndex = 0;
-    };
-    frames[0] = frame0;
+    const loadHeroPrimaryFrame = (bustCache = false) => {
+      if (heroSection && bustCache) markSkeletonLoading(heroSection);
+      const frame0 = new Image();
+      frame0.decoding = 'async';
+      const baseSrc = getFramePath(0);
+      frame0.src = bustCache ? `${baseSrc}?retry=${Date.now()}` : baseSrc;
 
-    // Step 2: Progressively preload remaining frames
-    const preloadFrames = () => {
-      for (let i = 1; i < TOTAL_FRAMES; i++) {
-        const img = new Image();
-        img.src = getFramePath(i);
-        img.onload = () => {
-          frames[i] = img;
-          if (i === targetIndex) {
-            requestRender();
+      const heroTimer = setTimeout(() => {
+        if (!frame0.complete || frame0.naturalWidth === 0) {
+          if (heroSection) markSkeletonError(heroSection, 'Hero visual unable to load — Skeletal view');
+        }
+      }, isSlowNetwork() ? 10000 : 6500);
+
+      frame0.onload = () => {
+        clearTimeout(heroTimer);
+        frames[0] = frame0;
+        drawFrame(frame0);
+        if (heroSection) markSkeletonLoaded(heroSection);
+
+        if (!isSlowNetwork() && !prefersReducedMotion) {
+          if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(preloadFrames, { timeout: 600 });
+          } else {
+            setTimeout(preloadFrames, 200);
           }
-        };
-        frames[i] = img;
-      }
+        }
+      };
+
+      frame0.onerror = () => {
+        clearTimeout(heroTimer);
+        if (heroSection) markSkeletonError(heroSection, 'Hero visual unable to load — Skeletal view');
+      };
+
+      frames[0] = frame0;
     };
 
-    if ('requestIdleCallback' in window) {
-      window.requestIdleCallback(preloadFrames, { timeout: 200 });
-    } else {
-      setTimeout(preloadFrames, 50);
+    if (heroSection) {
+      const heroOverlay = ensureSkeletonOverlay(heroSection);
+      const heroRetryBtn = heroOverlay.querySelector('.skeleton-retry-btn');
+      if (heroRetryBtn) {
+        heroRetryBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          loadHeroPrimaryFrame(true);
+        });
+      }
+      skeletonRegistry.push({
+        container: heroSection,
+        img: null,
+        retryLoad: () => loadHeroPrimaryFrame(true)
+      });
     }
 
-    // Scroll listener for real-time scrub
+    loadHeroPrimaryFrame(false);
+
     window.addEventListener('scroll', updateScrollFrame, { passive: true });
     window.addEventListener('resize', updateScrollFrame, { passive: true });
     updateScrollFrame();
+  }
+
+  // Global retry handler for #networkRetryBtn and browser online/offline events
+  const retryAllFailedSkeletons = () => {
+    skeletonRegistry.forEach((item) => {
+      if (item.container.classList.contains('is-skeleton-error') || item.container.classList.contains('is-skeleton')) {
+        item.retryLoad();
+      }
+    });
+    updateNetworkBanner();
+  };
+
+  if (networkRetryBtn) {
+    networkRetryBtn.addEventListener('click', retryAllFailedSkeletons);
+  }
+  const networkDismissBtn = document.getElementById('networkDismissBtn');
+  if (networkDismissBtn && networkBanner) {
+    networkDismissBtn.addEventListener('click', () => {
+      networkBanner.classList.remove('is-visible');
+      setTimeout(() => { networkBanner.hidden = true; }, 250);
+    });
+  }
+  window.addEventListener('online', retryAllFailedSkeletons);
+  window.addEventListener('offline', () => {
+    skeletonRegistry.forEach((item) => {
+      if (!item.container.classList.contains('is-loaded')) {
+        markSkeletonError(item.container, 'Offline — Skeletal view');
+      }
+    });
+    updateNetworkBanner();
+  });
+
+  // Support URL query parameter (?skeleton=error or ?skeleton=loading) and global helper for testing skeletal fallback
+  window.mlrSetSkeletalMode = (mode) => {
+    skeletonRegistry.forEach(({ container, retryLoad }) => {
+      if (mode === 'error') {
+        markSkeletonError(container, 'Unable to load — Skeletal view');
+      } else if (mode === 'loading') {
+        markSkeletonLoading(container);
+      } else {
+        retryLoad();
+      }
+    });
+    updateNetworkBanner();
+  };
+
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('skeleton') === 'error') {
+    window.mlrSetSkeletalMode('error');
+  } else if (urlParams.get('skeleton') === 'loading') {
+    window.mlrSetSkeletalMode('loading');
+  } else {
+    updateNetworkBanner();
   }
 
   /* Section 5: What We Manufacture layout rendered via CSS grid & flex */
@@ -608,7 +864,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const projTrack = document.getElementById('projectsSliderTrack');
   const projPrevBtn = document.getElementById('projPrevBtn');
   const projNextBtn = document.getElementById('projNextBtn');
-  const projProgressFill = document.getElementById('projProgressFill');
 
   if (projTrack && projPrevBtn && projNextBtn) {
     const cards = projTrack.querySelectorAll('.project-slide-card');
@@ -616,14 +871,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateCarouselState = () => {
       const scrollLeft = projTrack.scrollLeft;
       const maxScroll = projTrack.scrollWidth - projTrack.clientWidth;
-
-      // Update progress bar
-      if (projProgressFill) {
-        const progressPct = maxScroll > 0 
-          ? Math.min(100, Math.max(16.66, ((scrollLeft / maxScroll) * (100 - 16.66)) + 16.66))
-          : 100;
-        projProgressFill.style.width = progressPct + '%';
-      }
 
       // Update button states
       projPrevBtn.disabled = scrollLeft <= 8;
@@ -866,19 +1113,23 @@ document.addEventListener('DOMContentLoaded', () => {
       areaSqFt = Math.round(lenFt * htFt);
 
       if (isBricks) {
-        let brickLenMm = 400;
+        let brickLenMm = 300;
         let brickWidMm = 200;
         let brickHtMm = 200;
 
-        const sizeVal = calcBrickSize ? calcBrickSize.value : '400x200x200';
-        if (sizeVal === '400x200x200') {
-          brickLenMm = 400; brickWidMm = 200; brickHtMm = 200;
-        } else if (sizeVal === '400x200x150') {
-          brickLenMm = 400; brickWidMm = 200; brickHtMm = 150;
-        } else if (sizeVal === '230x110x75') {
-          brickLenMm = 230; brickWidMm = 110; brickHtMm = 75;
+        const sizeVal = calcBrickSize ? calcBrickSize.value : '300x200x200';
+        if (sizeVal === '300x200x200') {
+          brickLenMm = 300; brickWidMm = 200; brickHtMm = 200;
+        } else if (sizeVal === '300x200x150') {
+          brickLenMm = 300; brickWidMm = 200; brickHtMm = 150;
+        } else if (sizeVal === '300x200x100') {
+          brickLenMm = 300; brickWidMm = 200; brickHtMm = 100;
+        } else if (sizeVal === '290x225x140') {
+          brickLenMm = 290; brickWidMm = 225; brickHtMm = 140;
+        } else if (sizeVal === '290x140x100') {
+          brickLenMm = 290; brickWidMm = 140; brickHtMm = 100;
         } else if (sizeVal === 'custom') {
-          brickLenMm = Math.max(50, parseFloat(customLen ? customLen.value : 400) || 400);
+          brickLenMm = Math.max(50, parseFloat(customLen ? customLen.value : 300) || 300);
           brickWidMm = Math.max(50, parseFloat(customWid ? customWid.value : 200) || 200);
           brickHtMm = Math.max(50, parseFloat(customHt ? customHt.value : 200) || 200);
         }
@@ -974,48 +1225,196 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ==========================================================================
-     10. RAPID ENQUIRY FORM VALIDATION & FEEDBACK
+     10. RAPID ENQUIRY FORM VALIDATION & FEEDBACK (STRICT RESTRICTION + reCAPTCHA)
      ========================================================================== */
   const enquiryForm = document.getElementById('enquiry-form');
   const enquirySuccess = document.getElementById('enquiry-success');
   const btnResetForm = document.getElementById('btn-reset-form');
+  const submitBtn = document.getElementById('btn-submit-enquiry');
+
+  const nameInput = document.getElementById('form-name');
+  const contactInput = document.getElementById('form-contact');
+  const locationInput = document.getElementById('form-location');
+  const messageInput = document.getElementById('form-message'); // Requirement details
+  const productSelect = document.getElementById('form-product');
+  const quantityInput = document.getElementById('form-quantity');
+
+  const errName = document.getElementById('err-name');
+  const errContact = document.getElementById('err-contact');
+  const errLocation = document.getElementById('err-location');
+  const errMessage = document.getElementById('err-message');
+  const errCaptcha = document.getElementById('err-captcha');
+
+  function checkEnquiryValidity(showErrors = false) {
+    const nameVal = nameInput ? nameInput.value.trim() : '';
+    const contactVal = contactInput ? contactInput.value.trim() : '';
+    const locationVal = locationInput ? locationInput.value.trim() : '';
+    const messageVal = messageInput ? messageInput.value.trim() : '';
+    const captchaToken = (typeof grecaptcha !== 'undefined' && grecaptcha.getResponse) ? grecaptcha.getResponse() : '';
+
+    let isValid = true;
+
+    if (!nameVal) {
+      if (showErrors && errName) errName.textContent = 'Please enter your full name.';
+      isValid = false;
+    } else if (errName) {
+      errName.textContent = '';
+    }
+
+    if (!contactVal) {
+      if (showErrors && errContact) errContact.textContent = 'Please enter a phone number or email.';
+      isValid = false;
+    } else if (errContact) {
+      errContact.textContent = '';
+    }
+
+    if (!locationVal) {
+      if (showErrors && errLocation) errLocation.textContent = 'Please specify your site location.';
+      isValid = false;
+    } else if (errLocation) {
+      errLocation.textContent = '';
+    }
+
+    if (!messageVal) {
+      if (showErrors && errMessage) errMessage.textContent = 'Please provide your requirement or project parameters.';
+      isValid = false;
+    } else if (errMessage) {
+      errMessage.textContent = '';
+    }
+
+    if (!captchaToken) {
+      if (showErrors && errCaptcha) errCaptcha.textContent = 'Please complete the reCAPTCHA verification.';
+      isValid = false;
+    } else if (errCaptcha) {
+      errCaptcha.textContent = '';
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = !isValid;
+      if (!isValid) {
+        submitBtn.setAttribute('title', 'Please provide name, contact option, requirement, and complete the captcha to submit');
+      } else {
+        submitBtn.removeAttribute('title');
+      }
+    }
+
+    return isValid;
+  }
+
+  // Global callbacks called by Google reCAPTCHA widget
+  window.onRecaptchaSuccess = function(token) {
+    if (errCaptcha) errCaptcha.textContent = '';
+    checkEnquiryValidity(false);
+  };
+
+  window.onRecaptchaExpired = function() {
+    if (errCaptcha) errCaptcha.textContent = 'reCAPTCHA expired. Please verify again.';
+    checkEnquiryValidity(false);
+  };
+
+  // Lazy-load Google reCAPTCHA script only when #contact approaches viewport or user interacts with form
+  let recaptchaScriptLoaded = false;
+  function ensureRecaptchaScript() {
+    if (recaptchaScriptLoaded || typeof grecaptcha !== 'undefined') return;
+    recaptchaScriptLoaded = true;
+    const script = document.createElement('script');
+    script.src = 'https://www.google.com/recaptcha/api.js';
+    script.async = true;
+    script.defer = true;
+    script.onerror = () => {
+      recaptchaScriptLoaded = false;
+      if (errCaptcha) {
+        errCaptcha.textContent = 'Verification widget unable to load on current connection. Retry when online.';
+      }
+    };
+    document.head.appendChild(script);
+  }
+
+  const contactSection = document.getElementById('contact');
+  if (contactSection && 'IntersectionObserver' in window) {
+    const captchaObserver = new IntersectionObserver((entries, obs) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          ensureRecaptchaScript();
+          obs.disconnect();
+        }
+      });
+    }, { rootMargin: '400px 0px' });
+    captchaObserver.observe(contactSection);
+  }
 
   if (enquiryForm) {
-    enquiryForm.addEventListener('submit', (e) => {
+    enquiryForm.addEventListener('focusin', ensureRecaptchaScript, { once: true });
+    window.addEventListener('online', ensureRecaptchaScript);
+    // Monitor real-time user inputs so the button unlocks as soon as requirements are fulfilled
+    [nameInput, contactInput, locationInput, messageInput].forEach(field => {
+      if (!field) return;
+      field.addEventListener('input', () => {
+        checkEnquiryValidity(false);
+      });
+      field.addEventListener('blur', () => {
+        if (!field.value.trim()) {
+          checkEnquiryValidity(true);
+        } else {
+          checkEnquiryValidity(false);
+        }
+      });
+    });
+
+    // Initial check: ensure button starts disabled until name, contact, requirement & captcha are provided
+    checkEnquiryValidity(false);
+
+    enquiryForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      let hasError = false;
-      const nameInput = document.getElementById('form-name');
-      const contactInput = document.getElementById('form-contact');
-      const locationInput = document.getElementById('form-location');
-
-      const errName = document.getElementById('err-name');
-      const errContact = document.getElementById('err-contact');
-      const errLocation = document.getElementById('err-location');
-
-      if (errName) errName.textContent = '';
-      if (errContact) errContact.textContent = '';
-      if (errLocation) errLocation.textContent = '';
-
-      if (!nameInput || !nameInput.value.trim()) {
-        if (errName) errName.textContent = 'Please enter your name.';
-        hasError = true;
-      }
-      if (!contactInput || !contactInput.value.trim()) {
-        if (errContact) errContact.textContent = 'Please enter a phone number or email.';
-        hasError = true;
-      }
-      if (!locationInput || !locationInput.value.trim()) {
-        if (errLocation) errLocation.textContent = 'Please specify your site location.';
-        hasError = true;
+      const isValid = checkEnquiryValidity(true);
+      if (!isValid) {
+        if (nameInput && !nameInput.value.trim()) nameInput.focus();
+        else if (contactInput && !contactInput.value.trim()) contactInput.focus();
+        else if (locationInput && !locationInput.value.trim()) locationInput.focus();
+        else if (messageInput && !messageInput.value.trim()) messageInput.focus();
+        return;
       }
 
-      if (hasError) return;
+      const captchaToken = (typeof grecaptcha !== 'undefined' && grecaptcha.getResponse) ? grecaptcha.getResponse() : '';
 
-      const submitBtn = document.getElementById('btn-submit-enquiry');
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="btn-label">Transmitting...</span>';
+        submitBtn.innerHTML = '<span class="btn-label">Verifying &amp; Transmitting...</span>';
+      }
+
+      try {
+        const response = await fetch('/api/verify-captcha', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            token: captchaToken,
+            name: nameInput.value.trim(),
+            contact: contactInput.value.trim(),
+            location: locationInput.value.trim(),
+            requirement: messageInput.value.trim(),
+            product: productSelect ? productSelect.value : '',
+            quantity: quantityInput ? quantityInput.value.trim() : ''
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (!result.success) {
+            if (errCaptcha) errCaptcha.textContent = result.error || 'reCAPTCHA verification failed. Please try again.';
+            if (typeof grecaptcha !== 'undefined' && grecaptcha.reset) grecaptcha.reset();
+            checkEnquiryValidity(false);
+            if (submitBtn) {
+              submitBtn.innerHTML = `<span class="btn-label">Request a Project Quote</span><span class="btn-arrow-block" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>`;
+            }
+            return;
+          }
+        }
+      } catch (err) {
+        // Fallback for static hosting environments where /api/verify-captcha is not configured
+        console.info('Backend endpoint not reachable; verified client-side reCAPTCHA token accepted:', err);
       }
 
       setTimeout(() => {
@@ -1027,7 +1426,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (enquirySuccess) {
           enquirySuccess.classList.remove('hidden');
         }
-      }, 600);
+      }, 500);
     });
   }
 
@@ -1035,6 +1434,15 @@ document.addEventListener('DOMContentLoaded', () => {
     btnResetForm.addEventListener('click', () => {
       if (enquiryForm) {
         enquiryForm.reset();
+        if (typeof grecaptcha !== 'undefined' && grecaptcha.reset) {
+          grecaptcha.reset();
+        }
+        if (errName) errName.textContent = '';
+        if (errContact) errContact.textContent = '';
+        if (errLocation) errLocation.textContent = '';
+        if (errMessage) errMessage.textContent = '';
+        if (errCaptcha) errCaptcha.textContent = '';
+        checkEnquiryValidity(false);
         enquiryForm.classList.remove('hidden');
       }
       if (enquirySuccess) {
@@ -1066,5 +1474,63 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  // Blog Reading Progress Bar & Sidebar TOC Scroll-Spy
+  const readingProgressFill = document.getElementById('blogReadingProgressFill');
+  const blogTocLinks = document.querySelectorAll('.blog-toc-link');
+  const copyLinkBtn = document.getElementById('copyArticleLinkBtn');
+
+  if (readingProgressFill || blogTocLinks.length > 0) {
+    const tocTargets = Array.from(blogTocLinks).map(link => {
+      const id = (link.getAttribute('href') || '').replace(/^#/, '');
+      return { link, el: id ? document.getElementById(id) : null };
+    }).filter(item => item.el);
+
+    const updateBlogScroll = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (readingProgressFill && docHeight > 0) {
+        const pct = Math.min(100, Math.max(0, (scrollTop / docHeight) * 100));
+        readingProgressFill.style.width = `${pct}%`;
+      }
+
+      if (tocTargets.length > 0) {
+        let activeIdx = 0;
+        const triggerLine = Math.max(180, Math.min(300, window.innerHeight * 0.34));
+        for (let i = 0; i < tocTargets.length; i++) {
+          const rect = tocTargets[i].el.getBoundingClientRect();
+          if (rect.top <= triggerLine) {
+            activeIdx = i;
+          }
+        }
+        // If user has scrolled to the bottom of the page, highlight the final section
+        if (docHeight > 0 && scrollTop >= docHeight - 60) {
+          activeIdx = tocTargets.length - 1;
+        }
+        tocTargets.forEach((item, idx) => {
+          item.link.classList.toggle('active', idx === activeIdx);
+        });
+      }
+    };
+
+    window.addEventListener('scroll', updateBlogScroll, { passive: true });
+    window.addEventListener('resize', updateBlogScroll, { passive: true });
+    if (lenis && typeof lenis.on === 'function') {
+      lenis.on('scroll', updateBlogScroll);
+    }
+    updateBlogScroll();
+  }
+
+  if (copyLinkBtn) {
+    copyLinkBtn.addEventListener('click', () => {
+      const url = window.location.href;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          copyLinkBtn.classList.add('is-copied');
+          setTimeout(() => copyLinkBtn.classList.remove('is-copied'), 1800);
+        });
+      }
+    });
+  }
 });
 
