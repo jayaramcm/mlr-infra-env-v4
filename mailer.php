@@ -49,13 +49,13 @@ use PHPMailer\PHPMailer\SMTP;
 $SMTP_HOST            = 'smtp.gmail.com';
 $SMTP_PORT            = 587;
 $SMTP_SECURE          = PHPMailer::ENCRYPTION_STARTTLS;
-$SMTP_USERNAME        = 'jayaramcm.envizon@gmail.com';
-$SMTP_PASSWORD        = 'Pradeep@143';
+$SMTP_USERNAME        = 'keshanthenvizon@gmail.com';
+$SMTP_PASSWORD        = 'jkqjaeinyzenmhkb';
 
-$FROM_EMAIL           = 'jayaramcm.envizon@gmail.com';
+$FROM_EMAIL           = 'keshanthenvizon@gmail.com';
 $FROM_NAME            = 'MLR Infra';
 
-$TO_EMAIL             = 'jayaramcm.envizon@gmail.com';
+$TO_EMAIL             = 'keshanthenvizon@gmail.com';
 $TO_NAME              = 'MLR Infra Team';
 
 $COMPANY_NAME         = 'MLR Infra';
@@ -135,11 +135,11 @@ if ($productInterest === '' || !in_array($productInterest, $allowedProducts, tru
     $productInterest = 'CC Bricks';
 }
 
-if ($projectLocation === '' || mb_strlen($projectLocation) < 2) {
+if ($projectLocation === '') {
     $errors['project_location'] = 'Please specify your project location.';
 }
 
-if ($projectParams === '' || mb_strlen($projectParams) < 3) {
+if ($projectParams === '') {
     $errors['project_parameters'] = 'Please provide your project parameters or target dates.';
 }
 
@@ -348,3 +348,4 @@ try {
         'debug'   => isset($mail) ? $mail->ErrorInfo : $e->getMessage(),
     ]);
 }
+

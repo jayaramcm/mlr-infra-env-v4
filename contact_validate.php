@@ -23,13 +23,13 @@ error_reporting(E_ALL);
 // 1. CONFIGURATION — MLR INFRA SMTP & BRAND SETTINGS
 // =============================================================================
 define('SMTP_HOST', 'smtp.gmail.com');
-define('SMTP_USERNAME', 'jayaramcm.envizon@gmail.com');
-define('SMTP_PASSWORD', 'Pradeep@143');
+define('SMTP_USERNAME', 'keshanthenvizon@gmail.com');
+define('SMTP_PASSWORD', 'jkqjaeinyzenmhkb');
 define('SMTP_PORT', 587);
 define('SMTP_SECURE', 'tls');              // 'tls' (587) with automatic fallback to 'ssl' (465)
-define('FROM_EMAIL', 'jayaramcm.envizon@gmail.com');
+define('FROM_EMAIL', 'keshanthenvizon@gmail.com');
 define('FROM_NAME', 'MLR Infra');
-define('FOUNDER_EMAIL', 'jayaramcm.envizon@gmail.com');
+define('FOUNDER_EMAIL', 'keshanthenvizon@gmail.com');
 
 define('COMPANY_NAME', 'MLR Infra');
 define('COMPANY_TAGLINE', 'We bring the factory to your site');

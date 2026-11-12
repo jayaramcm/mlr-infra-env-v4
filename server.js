@@ -14,10 +14,10 @@ const RECAPTCHA_SECRET_KEY = '6LcRvfMtAAAAABEUnxF_1qUJuoZ0y-EknmZt5euB';
 const SMTP_CONFIG = {
   host: 'smtp.gmail.com',
   port: 465,
-  user: 'jayaramcm.envizon@gmail.com',
-  pass: 'Pradeep@143',
+  user: 'keshanthenvizon@gmail.com',
+  pass: 'jkqjaeinyzenmhkb',
   fromName: 'MLR Infra',
-  toEmail: 'jayaramcm.envizon@gmail.com',
+  toEmail: 'keshanthenvizon@gmail.com',
   companyPhone: '+91 94905 57886 / +91 93475 57886'
 };
 

@@ -1417,16 +1417,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
       try {
         const endpoint = enquiryForm.getAttribute('action') || 'contact_validate.php';
-        const response = await fetch(endpoint, {
+        const requestInit = {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'Accept': 'application/json'
           },
           body: formBody
-        });
+        };
 
-        const result = await response.json();
+        let response = await fetch(endpoint, requestInit).catch(() => null);
+        let rawText = response ? await response.text() : '';
+        let result = null;
+
+        try {
+          result = rawText ? JSON.parse(rawText) : null;
+        } catch (_) {
+          result = null;
+        }
+
+        // If opened via a static server (e.g. Live Server / file) where .php is not executed, fallback to local Node server on port 3030
+        if (!result && window.location.port !== '3030') {
+          response = await fetch('http://localhost:3030/contact_validate.php', requestInit);
+          rawText = await response.text();
+          result = JSON.parse(rawText);
+        }
+
+        if (!result) {
+          throw new Error('Empty or non-JSON response from mail endpoint');
+        }
+
         const isSuccess = result.success === true || result.status === 'success';
 
         if (!response.ok || !isSuccess) {
@@ -1444,7 +1464,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (err) {
         console.error('Form submission error:', err);
         if (errCaptcha) {
-          errCaptcha.textContent = 'Unable to reach mail server. Please call +91 94905 57886 or email jayaramcm.envizon@gmail.com.';
+          errCaptcha.textContent = 'Unable to reach mail server. Please call +91 94905 57886 or email keshanthenvizon@gmail.com.';
         }
         if (submitBtn) {
           submitBtn.disabled = false;
