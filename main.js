@@ -1229,11 +1229,13 @@ document.addEventListener('DOMContentLoaded', () => {
      ========================================================================== */
   const enquiryForm = document.getElementById('enquiry-form');
   const enquirySuccess = document.getElementById('enquiry-success');
+  const enquirySuccessMsg = document.getElementById('enquiry-success-msg');
   const btnResetForm = document.getElementById('btn-reset-form');
   const submitBtn = document.getElementById('btn-submit-enquiry');
 
   const nameInput = document.getElementById('form-name');
   const contactInput = document.getElementById('form-contact');
+  const emailInput = document.getElementById('form-email');
   const locationInput = document.getElementById('form-location');
   const messageInput = document.getElementById('form-message'); // Requirement details
   const productSelect = document.getElementById('form-product');
@@ -1241,31 +1243,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const errName = document.getElementById('err-name');
   const errContact = document.getElementById('err-contact');
+  const errEmail = document.getElementById('err-email');
   const errLocation = document.getElementById('err-location');
   const errMessage = document.getElementById('err-message');
   const errCaptcha = document.getElementById('err-captcha');
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^[0-9+\-\s()]{7,20}$/;
+
   function checkEnquiryValidity(showErrors = false) {
     const nameVal = nameInput ? nameInput.value.trim() : '';
     const contactVal = contactInput ? contactInput.value.trim() : '';
+    const emailVal = emailInput ? emailInput.value.trim() : '';
     const locationVal = locationInput ? locationInput.value.trim() : '';
     const messageVal = messageInput ? messageInput.value.trim() : '';
     const captchaToken = (typeof grecaptcha !== 'undefined' && grecaptcha.getResponse) ? grecaptcha.getResponse() : '';
 
     let isValid = true;
 
-    if (!nameVal) {
+    if (!nameVal || nameVal.length < 2) {
       if (showErrors && errName) errName.textContent = 'Please enter your full name.';
       isValid = false;
     } else if (errName) {
       errName.textContent = '';
     }
 
-    if (!contactVal) {
-      if (showErrors && errContact) errContact.textContent = 'Please enter a phone number or email.';
+    if (!contactVal || !phoneRegex.test(contactVal)) {
+      if (showErrors && errContact) errContact.textContent = 'Please enter a valid phone number.';
       isValid = false;
     } else if (errContact) {
       errContact.textContent = '';
+    }
+
+    if (!emailVal || !emailRegex.test(emailVal)) {
+      if (showErrors && errEmail) errEmail.textContent = 'Please enter a valid email address.';
+      isValid = false;
+    } else if (errEmail) {
+      errEmail.textContent = '';
     }
 
     if (!locationVal) {
@@ -1292,7 +1306,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (submitBtn) {
       submitBtn.disabled = !isValid;
       if (!isValid) {
-        submitBtn.setAttribute('title', 'Please provide name, contact option, requirement, and complete the captcha to submit');
+        submitBtn.setAttribute('title', 'Please provide name, phone, email, location, requirement, and complete the captcha to submit');
       } else {
         submitBtn.removeAttribute('title');
       }
@@ -1347,7 +1361,7 @@ document.addEventListener('DOMContentLoaded', () => {
     enquiryForm.addEventListener('focusin', ensureRecaptchaScript, { once: true });
     window.addEventListener('online', ensureRecaptchaScript);
     // Monitor real-time user inputs so the button unlocks as soon as requirements are fulfilled
-    [nameInput, contactInput, locationInput, messageInput].forEach(field => {
+    [nameInput, contactInput, emailInput, locationInput, messageInput].forEach(field => {
       if (!field) return;
       field.addEventListener('input', () => {
         checkEnquiryValidity(false);
@@ -1361,7 +1375,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Initial check: ensure button starts disabled until name, contact, requirement & captcha are provided
+    // Initial check: ensure button starts disabled until all required fields & captcha are provided
     checkEnquiryValidity(false);
 
     enquiryForm.addEventListener('submit', async (e) => {
@@ -1370,7 +1384,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const isValid = checkEnquiryValidity(true);
       if (!isValid) {
         if (nameInput && !nameInput.value.trim()) nameInput.focus();
-        else if (contactInput && !contactInput.value.trim()) contactInput.focus();
+        else if (contactInput && (!contactInput.value.trim() || !phoneRegex.test(contactInput.value.trim()))) contactInput.focus();
+        else if (emailInput && (!emailInput.value.trim() || !emailRegex.test(emailInput.value.trim()))) emailInput.focus();
         else if (locationInput && !locationInput.value.trim()) locationInput.focus();
         else if (messageInput && !messageInput.value.trim()) messageInput.focus();
         return;
@@ -1380,53 +1395,75 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="btn-label">Verifying &amp; Transmitting...</span>';
+        submitBtn.innerHTML = '<span class="btn-label">Verifying &amp; Sending Mail...</span>';
       }
+
+      const payload = {
+        full_name: nameInput ? nameInput.value.trim() : '',
+        phone: contactInput ? contactInput.value.trim() : '',
+        contact_info: contactInput ? contactInput.value.trim() : '',
+        email: emailInput ? emailInput.value.trim() : '',
+        product_interest: productSelect ? productSelect.value : 'CC Bricks',
+        estimated_quantity: quantityInput ? quantityInput.value.trim() : '',
+        project_location: locationInput ? locationInput.value.trim() : '',
+        project_parameters: messageInput ? messageInput.value.trim() : '',
+        'g-recaptcha-response': captchaToken,
+        token: captchaToken,
+        website: ''
+      };
+
+      const formBody = new URLSearchParams(payload).toString();
+      let serverMsg = '';
 
       try {
-        const response = await fetch('/api/verify-captcha', {
+        const endpoint = enquiryForm.getAttribute('action') || 'contact_validate.php';
+        const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Accept': 'application/json'
           },
-          body: JSON.stringify({
-            token: captchaToken,
-            name: nameInput.value.trim(),
-            contact: contactInput.value.trim(),
-            location: locationInput.value.trim(),
-            requirement: messageInput.value.trim(),
-            product: productSelect ? productSelect.value : '',
-            quantity: quantityInput ? quantityInput.value.trim() : ''
-          })
+          body: formBody
         });
 
-        if (response.ok) {
-          const result = await response.json();
-          if (!result.success) {
-            if (errCaptcha) errCaptcha.textContent = result.error || 'reCAPTCHA verification failed. Please try again.';
-            if (typeof grecaptcha !== 'undefined' && grecaptcha.reset) grecaptcha.reset();
-            checkEnquiryValidity(false);
-            if (submitBtn) {
-              submitBtn.innerHTML = `<span class="btn-label">Request a Project Quote</span><span class="btn-arrow-block" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>`;
-            }
-            return;
-          }
-        }
-      } catch (err) {
-        // Fallback for static hosting environments where /api/verify-captcha is not configured
-        console.info('Backend endpoint not reachable; verified client-side reCAPTCHA token accepted:', err);
-      }
+        const result = await response.json();
+        const isSuccess = result.success === true || result.status === 'success';
 
-      setTimeout(() => {
+        if (!response.ok || !isSuccess) {
+          const errorMessage = result.message || result.error || 'Submission failed. Please verify your details and try again.';
+          if (errCaptcha) errCaptcha.textContent = errorMessage;
+          if (typeof grecaptcha !== 'undefined' && grecaptcha.reset) grecaptcha.reset();
+          checkEnquiryValidity(false);
+          if (submitBtn) {
+            submitBtn.innerHTML = `<span class="btn-label">Request a Project Quote</span><span class="btn-arrow-block" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>`;
+          }
+          return;
+        }
+
+        serverMsg = result.message || '';
+      } catch (err) {
+        console.error('Form submission error:', err);
+        if (errCaptcha) {
+          errCaptcha.textContent = 'Unable to reach mail server. Please call +91 94905 57886 or email jayaramcm.envizon@gmail.com.';
+        }
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.innerHTML = `<span class="btn-label">Request a Project Quote</span><span class="btn-arrow-block" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>`;
         }
-        enquiryForm.classList.add('hidden');
-        if (enquirySuccess) {
-          enquirySuccess.classList.remove('hidden');
-        }
-      }, 500);
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<span class="btn-label">Request a Project Quote</span><span class="btn-arrow-block" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>`;
+      }
+      if (enquirySuccessMsg && serverMsg) {
+        enquirySuccessMsg.textContent = serverMsg;
+      }
+      enquiryForm.classList.add('hidden');
+      if (enquirySuccess) {
+        enquirySuccess.classList.remove('hidden');
+      }
     });
   }
 
@@ -1439,6 +1476,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (errName) errName.textContent = '';
         if (errContact) errContact.textContent = '';
+        if (errEmail) errEmail.textContent = '';
         if (errLocation) errLocation.textContent = '';
         if (errMessage) errMessage.textContent = '';
         if (errCaptcha) errCaptcha.textContent = '';

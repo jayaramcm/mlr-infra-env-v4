@@ -2018,6 +2018,9 @@
                   <a href="tel:+919490557886" class="hub-phone-link">+91 94905 57886</a> &bull;
                   <a href="tel:+919347557886" class="hub-phone-link">+91 93475 57886</a>
                 </div>
+                <div class="hub-phone">
+                  <a href="mailto:jayaramcm.envizon@gmail.com" class="hub-phone-link">jayaramcm.envizon@gmail.com</a>
+                </div>
               </div>
 
               <div class="hub-block">
@@ -2028,6 +2031,9 @@
                   <a href="tel:+919490557886" class="hub-phone-link">+91 94905 57886</a> &bull;
                   <a href="tel:+919347557886" class="hub-phone-link">+91 93475 57886</a>
                 </div>
+                <div class="hub-phone">
+                  <a href="mailto:jayaramcm.envizon@gmail.com" class="hub-phone-link">jayaramcm.envizon@gmail.com</a>
+                </div>
               </div>
             </div>
           </div>
@@ -2036,44 +2042,55 @@
           <div class="contact-form-side">
             <div class="form-container-box">
 
-              <form id="enquiry-form" class="enquiry-form" novalidate>
+              <form id="enquiry-form" class="enquiry-form" action="contact_validate.php" method="POST" novalidate>
+                <!-- Anti-bot Honeypot -->
+                <input type="text" name="website" style="display:none" tabindex="-1" autocomplete="off">
+
                 <div class="form-field">
                   <label for="form-name">Your Full Name *</label>
-                  <input type="text" id="form-name" required placeholder="e.g. Ramesh Reddy" class="form-input">
+                  <input type="text" id="form-name" name="full_name" required placeholder="e.g. Ramesh Reddy" class="form-input">
                   <span id="err-name" class="err-text"></span>
                 </div>
 
                 <div class="form-grid-2">
                   <div class="form-field">
-                    <label for="form-contact">Phone or Email *</label>
-                    <input type="text" id="form-contact" required placeholder="+91 98765 43210 or name@company.com" class="form-input">
+                    <label for="form-contact">Phone Number *</label>
+                    <input type="tel" id="form-contact" name="phone" required placeholder="+91 94905 57886" class="form-input">
                     <span id="err-contact" class="err-text"></span>
                   </div>
                   <div class="form-field">
-                    <label for="form-product">Product Interest *</label>
-                    <select id="form-product" class="form-input custom-select-styled">
-                      <option value="CC Bricks" selected>CC Bricks (Solid, Hollow, Fly Ash, Interlocking)</option>
-                      <option value="Precast Fencing">Precast Fencing (Compound Walls &amp; RCC)</option>
-                      <option value="Both CC Bricks & Precast Fencing">Both CC Bricks &amp; Precast Fencing</option>
-                    </select>
+                    <label for="form-email">Email Address *</label>
+                    <input type="email" id="form-email" name="email" required placeholder="name@company.com" class="form-input">
+                    <span id="err-email" class="err-text"></span>
                   </div>
                 </div>
 
                 <div class="form-grid-2">
                   <div class="form-field">
-                    <label for="form-quantity">Estimated Quantity or Area</label>
-                    <input type="text" id="form-quantity" placeholder="e.g. 50,000 bricks or 1,000 sq ft" class="form-input">
+                    <label for="form-product">Product Interest *</label>
+                    <select id="form-product" name="product_interest" class="form-input custom-select-styled">
+                      <option value="CC Bricks" selected>CC Bricks (Solid, Hollow, Fly Ash, Interlocking)</option>
+                      <option value="Concrete Paver Blocks">Concrete Paver Blocks (Interlocking &amp; Heavy-Duty)</option>
+                      <option value="Precast Fencing">Precast Fencing (Compound Walls &amp; RCC)</option>
+                      <option value="Both CC Bricks & Precast Fencing">Both CC Bricks &amp; Precast Fencing</option>
+                      <option value="Custom Concrete Blocks">Custom Concrete Blocks</option>
+                    </select>
                   </div>
                   <div class="form-field">
-                    <label for="form-location">Project Location *</label>
-                    <input type="text" id="form-location" required placeholder="City / District (e.g. Hyderabad, Chittoor)" class="form-input">
-                    <span id="err-location" class="err-text"></span>
+                    <label for="form-quantity">Estimated Quantity or Area</label>
+                    <input type="text" id="form-quantity" name="estimated_quantity" placeholder="e.g. 50,000 bricks or 1,000 sq ft" class="form-input">
                   </div>
                 </div>
 
                 <div class="form-field">
-                  <label for="form-message">Project Parameters &amp; Target Dates</label>
-                  <textarea id="form-message" rows="3" placeholder="Mention target start dates, site accessibility, wall heights..." class="form-input form-textarea"></textarea>
+                  <label for="form-location">Project Location *</label>
+                  <input type="text" id="form-location" name="project_location" required placeholder="City / District (e.g. Hyderabad, Chittoor)" class="form-input">
+                  <span id="err-location" class="err-text"></span>
+                </div>
+
+                <div class="form-field">
+                  <label for="form-message">Project Parameters &amp; Target Dates *</label>
+                  <textarea id="form-message" name="project_parameters" rows="3" required placeholder="Mention target start dates, site accessibility, wall heights..." class="form-input form-textarea"></textarea>
                   <span id="err-message" class="err-text"></span>
                 </div>
 
@@ -2082,7 +2099,7 @@
                   <span id="err-captcha" class="err-text"></span>
                 </div>
 
-                <button type="submit" id="btn-submit-enquiry" class="btn btn-primary w-full" disabled title="Please provide name, contact option, requirement, and complete the captcha to submit">
+                <button type="submit" id="btn-submit-enquiry" class="btn btn-primary w-full" disabled title="Please provide name, phone, email, location, requirement, and complete the captcha to submit">
                   <span class="btn-label">Request a Project Quote</span>
                   <span class="btn-arrow-block" aria-hidden="true">
                     <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -2096,7 +2113,7 @@
               <div id="enquiry-success" class="enquiry-success-box hidden">
                 <div class="success-check">&#10003;</div>
                 <h3 class="success-title">Enquiry Received</h3>
-                <p class="success-desc">Thanks. Our team will call you back with an indicative quote and a mobilization schedule.</p>
+                <p id="enquiry-success-msg" class="success-desc">Thanks! We have received your enquiry and sent a confirmation to your email. Our team will respond to you shortly.</p>
                 <button id="btn-reset-form" class="btn btn-secondary mt-4" type="button">Send Another Enquiry</button>
               </div>
             </div>
@@ -2154,6 +2171,7 @@
             <p class="footer-addr"><strong>Head office:</strong> [REAL DATA: address], Hyderabad, Telangana</p>
             <p class="footer-addr mt-2"><strong>Plant:</strong> [REAL DATA: plant address]</p>
             <p class="footer-addr mt-2"><strong>Phone:</strong> <a href="tel:+919490557886" class="footer-phone-link">+91 94905 57886</a>, <a href="tel:+919347557886" class="footer-phone-link">+91 93475 57886</a></p>
+            <p class="footer-addr mt-2"><strong>Email:</strong> <a href="mailto:jayaramcm.envizon@gmail.com" class="footer-phone-link">jayaramcm.envizon@gmail.com</a></p>
           </div>
         </div>
 
