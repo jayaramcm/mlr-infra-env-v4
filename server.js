@@ -12,12 +12,12 @@ const RECAPTCHA_SECRET_KEY = '6LcRvfMtAAAAABEUnxF_1qUJuoZ0y-EknmZt5euB';
 
 // SMTP Configuration (MLR Infra)
 const SMTP_CONFIG = {
-  host: 'smtp.gmail.com',
+  host: 'mail.mlrinfra.com',
   port: 465,
-  user: 'keshanthenvizon@gmail.com',
-  pass: 'jkqjaeinyzenmhkb',
+  user: 'info@mlrinfra.com',
+  pass: 'mlrinfra@123',
   fromName: 'MLR Infra',
-  toEmail: 'keshanthenvizon@gmail.com',
+  toEmail: 'info@mlrinfra.com',
   companyPhone: '+91 94905 57886 / +91 93475 57886'
 };
 

@@ -22,14 +22,14 @@ error_reporting(E_ALL);
 // =============================================================================
 // 1. CONFIGURATION — MLR INFRA SMTP & BRAND SETTINGS
 // =============================================================================
-define('SMTP_HOST', 'smtp.gmail.com');
-define('SMTP_USERNAME', 'keshanthenvizon@gmail.com');
-define('SMTP_PASSWORD', 'jkqjaeinyzenmhkb');
-define('SMTP_PORT', 587);
-define('SMTP_SECURE', 'tls');              // 'tls' (587) with automatic fallback to 'ssl' (465)
-define('FROM_EMAIL', 'keshanthenvizon@gmail.com');
+define('SMTP_HOST', 'mail.mlrinfra.com');
+define('SMTP_USERNAME', 'info@mlrinfra.com');
+define('SMTP_PASSWORD', 'mlrinfra@123');
+define('SMTP_PORT', 465);
+define('SMTP_SECURE', 'ssl');              // 'ssl' (465) with automatic fallback to 'tls' (587)
+define('FROM_EMAIL', 'info@mlrinfra.com');
 define('FROM_NAME', 'MLR Infra');
-define('FOUNDER_EMAIL', 'keshanthenvizon@gmail.com');
+define('FOUNDER_EMAIL', 'info@mlrinfra.com');
 
 define('COMPANY_NAME', 'MLR Infra');
 define('COMPANY_TAGLINE', 'We bring the factory to your site');

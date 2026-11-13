@@ -46,16 +46,16 @@ use PHPMailer\PHPMailer\SMTP;
 // ===========================================================
 // CONFIG — MLR Infra SMTP & Recipient Configuration
 // ===========================================================
-$SMTP_HOST            = 'smtp.gmail.com';
-$SMTP_PORT            = 587;
-$SMTP_SECURE          = PHPMailer::ENCRYPTION_STARTTLS;
-$SMTP_USERNAME        = 'keshanthenvizon@gmail.com';
-$SMTP_PASSWORD        = 'jkqjaeinyzenmhkb';
+$SMTP_HOST            = 'mail.mlrinfra.com';
+$SMTP_PORT            = 465;
+$SMTP_SECURE          = PHPMailer::ENCRYPTION_SMTPS;
+$SMTP_USERNAME        = 'info@mlrinfra.com';
+$SMTP_PASSWORD        = 'mlrinfra@123';
 
-$FROM_EMAIL           = 'keshanthenvizon@gmail.com';
+$FROM_EMAIL           = 'info@mlrinfra.com';
 $FROM_NAME            = 'MLR Infra';
 
-$TO_EMAIL             = 'keshanthenvizon@gmail.com';
+$TO_EMAIL             = 'info@mlrinfra.com';
 $TO_NAME              = 'MLR Infra Team';
 
 $COMPANY_NAME         = 'MLR Infra';
@@ -259,7 +259,7 @@ function configureMailer(string $host, string $user, string $pass, int $port, st
 
 try {
     try {
-        $mail = configureMailer($SMTP_HOST, $SMTP_USERNAME, $SMTP_PASSWORD, 587, PHPMailer::ENCRYPTION_STARTTLS);
+        $mail = configureMailer($SMTP_HOST, $SMTP_USERNAME, $SMTP_PASSWORD, 465, PHPMailer::ENCRYPTION_SMTPS);
         $mail->setFrom($FROM_EMAIL, $FROM_NAME);
         $mail->addAddress($TO_EMAIL, $TO_NAME);
         $mail->addReplyTo($email, $fullName);
@@ -268,8 +268,8 @@ try {
         $mail->Body    = $htmlBody;
         $mail->AltBody = $plainBody;
         $mail->send();
-    } catch (Exception $tlsEx) {
-        $mail = configureMailer($SMTP_HOST, $SMTP_USERNAME, $SMTP_PASSWORD, 465, PHPMailer::ENCRYPTION_SMTPS);
+    } catch (Exception $sslEx) {
+        $mail = configureMailer($SMTP_HOST, $SMTP_USERNAME, $SMTP_PASSWORD, 587, PHPMailer::ENCRYPTION_STARTTLS);
         $mail->setFrom($FROM_EMAIL, $FROM_NAME);
         $mail->addAddress($TO_EMAIL, $TO_NAME);
         $mail->addReplyTo($email, $fullName);
@@ -282,7 +282,7 @@ try {
 
     // Send automatic confirmation email to the visitor's email ID
     try {
-        $clientMail = configureMailer($SMTP_HOST, $SMTP_USERNAME, $SMTP_PASSWORD, 587, PHPMailer::ENCRYPTION_STARTTLS);
+        $clientMail = configureMailer($SMTP_HOST, $SMTP_USERNAME, $SMTP_PASSWORD, 465, PHPMailer::ENCRYPTION_SMTPS);
         $clientMail->setFrom($FROM_EMAIL, $FROM_NAME);
         $clientMail->addAddress($email, $fullName);
         $clientMail->addReplyTo($TO_EMAIL, $TO_NAME);

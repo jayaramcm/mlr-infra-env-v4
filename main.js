@@ -1417,7 +1417,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (err) {
         console.error('Form submission error:', err);
         if (errCaptcha) {
-          errCaptcha.textContent = 'Unable to reach mail server. Please call +91 94905 57886 or email keshanthenvizon@gmail.com.';
+          errCaptcha.textContent = 'Unable to reach mail server. Please call +91 94905 57886 or email info@mlrinfra.com.';
         }
         if (submitBtn) {
           submitBtn.disabled = false;
