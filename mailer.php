@@ -143,45 +143,6 @@ if ($projectParams === '') {
     $errors['project_parameters'] = 'Please provide your project parameters or target dates.';
 }
 
-if ($recaptchaToken === '') {
-    $errors['captcha'] = 'Please complete the reCAPTCHA verification.';
-} else {
-    $verifyUrl  = 'https://www.google.com/recaptcha/api/siteverify';
-    $verifyData = http_build_query([
-        'secret'   => $RECAPTCHA_SECRET_KEY,
-        'response' => $recaptchaToken,
-        'remoteip' => $_SERVER['REMOTE_ADDR'] ?? ''
-    ]);
-    $verifyResponse = false;
-    if (function_exists('curl_init')) {
-        $ch = curl_init($verifyUrl);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $verifyData);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        $verifyResponse = curl_exec($ch);
-        curl_close($ch);
-    } else {
-        $opts = [
-            'http' => [
-                'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-                'method'  => 'POST',
-                'content' => $verifyData,
-                'timeout' => 10
-            ]
-        ];
-        $context = stream_context_create($opts);
-        $verifyResponse = @file_get_contents($verifyUrl, false, $context);
-    }
-
-    if ($verifyResponse !== false) {
-        $captchaJson = json_decode($verifyResponse, true);
-        if (empty($captchaJson['success'])) {
-            $errors['captcha'] = 'reCAPTCHA verification failed. Please verify again.';
-        }
-    }
-}
-
 if (!empty($errors)) {
     http_response_code(422);
     echo json_encode([

@@ -148,10 +148,8 @@ function verifyRecaptcha(string $token): bool
     return is_array($result) && !empty($result['success']);
 }
 
+// reCAPTCHA disabled
 $recaptchaToken = trim((string) ($inputData['g-recaptcha-response'] ?? $inputData['token'] ?? ''));
-if (!verifyRecaptcha($recaptchaToken)) {
-    respond(false, 'reCAPTCHA verification failed. Please confirm you are not a robot and try again.', 422);
-}
 
 // =============================================================================
 // 3. COLLECT & SANITIZE MLR FORM INPUTS

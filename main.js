@@ -1296,17 +1296,14 @@ document.addEventListener('DOMContentLoaded', () => {
       errMessage.textContent = '';
     }
 
-    if (!captchaToken) {
-      if (showErrors && errCaptcha) errCaptcha.textContent = 'Please complete the reCAPTCHA verification.';
-      isValid = false;
-    } else if (errCaptcha) {
+    if (errCaptcha && isValid) {
       errCaptcha.textContent = '';
     }
 
     if (submitBtn) {
       submitBtn.disabled = !isValid;
       if (!isValid) {
-        submitBtn.setAttribute('title', 'Please provide name, phone, email, location, requirement, and complete the captcha to submit');
+        submitBtn.setAttribute('title', 'Please provide name, phone, email, location, and requirement to submit');
       } else {
         submitBtn.removeAttribute('title');
       }
@@ -1315,51 +1312,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return isValid;
   }
 
-  // Global callbacks called by Google reCAPTCHA widget
-  window.onRecaptchaSuccess = function(token) {
-    if (errCaptcha) errCaptcha.textContent = '';
-    checkEnquiryValidity(false);
-  };
-
-  window.onRecaptchaExpired = function() {
-    if (errCaptcha) errCaptcha.textContent = 'reCAPTCHA expired. Please verify again.';
-    checkEnquiryValidity(false);
-  };
-
-  // Lazy-load Google reCAPTCHA script only when #contact approaches viewport or user interacts with form
-  let recaptchaScriptLoaded = false;
-  function ensureRecaptchaScript() {
-    if (recaptchaScriptLoaded || typeof grecaptcha !== 'undefined') return;
-    recaptchaScriptLoaded = true;
-    const script = document.createElement('script');
-    script.src = 'https://www.google.com/recaptcha/api.js';
-    script.async = true;
-    script.defer = true;
-    script.onerror = () => {
-      recaptchaScriptLoaded = false;
-      if (errCaptcha) {
-        errCaptcha.textContent = 'Verification widget unable to load on current connection. Retry when online.';
-      }
-    };
-    document.head.appendChild(script);
-  }
-
-  const contactSection = document.getElementById('contact');
-  if (contactSection && 'IntersectionObserver' in window) {
-    const captchaObserver = new IntersectionObserver((entries, obs) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          ensureRecaptchaScript();
-          obs.disconnect();
-        }
-      });
-    }, { rootMargin: '400px 0px' });
-    captchaObserver.observe(contactSection);
-  }
-
   if (enquiryForm) {
-    enquiryForm.addEventListener('focusin', ensureRecaptchaScript, { once: true });
-    window.addEventListener('online', ensureRecaptchaScript);
     // Monitor real-time user inputs so the button unlocks as soon as requirements are fulfilled
     [nameInput, contactInput, emailInput, locationInput, messageInput].forEach(field => {
       if (!field) return;
@@ -1375,7 +1328,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Initial check: ensure button starts disabled until all required fields & captcha are provided
+    // Initial check: ensure button starts disabled until all required fields are provided
     checkEnquiryValidity(false);
 
     enquiryForm.addEventListener('submit', async (e) => {

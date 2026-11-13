@@ -145,7 +145,7 @@ const requestHandler = (req, res) => {
         req.destroy();
       }
     });
-    req.on('end', () => {
+    req.on('end', async () => {
       try {
         const contentType = (req.headers['content-type'] || '').toLowerCase();
         let payload = {};
@@ -175,7 +175,6 @@ const requestHandler = (req, res) => {
         const estimatedQuantity = String(payload.estimated_quantity || payload.quantity || '').trim();
         const projectLocation = String(payload.project_location || payload.location || '').trim();
         const projectParams = String(payload.project_parameters || payload.requirement || payload.message || '').trim();
-        const token = String(payload['g-recaptcha-response'] || payload.token || '').trim();
 
         if (!fullName || !phone || !email || !projectLocation || !projectParams) {
           res.writeHead(422, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
@@ -187,116 +186,75 @@ const requestHandler = (req, res) => {
           return;
         }
 
-        if (!token) {
-          res.writeHead(400, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-          res.end(JSON.stringify({ success: false, status: 'error', message: 'Please complete the reCAPTCHA verification.' }));
-          return;
-        }
+        const teamHtml = `
+          <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;border:1px solid #cbd5e1;border-top:5px solid #0056A7;">
+            <div style="background:#0a192f;color:#fff;padding:20px 24px;">
+              <div style="color:#8CC63F;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">MLR Infra &bull; New Project Enquiry</div>
+              <h2 style="margin:6px 0 0;font-size:20px;">New Quote Request from ${fullName}</h2>
+              <p style="margin:6px 0 0;font-size:13px;color:#cbd5e1;">Reply directly to this email to respond to <strong>${fullName}</strong> (${email}).</p>
+            </div>
+            <div style="padding:24px;">
+              <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse:collapse;font-size:14px;">
+                <tr><td style="border-bottom:1px solid #e2e8f0;font-weight:700;width:36%;">Full Name</td><td style="border-bottom:1px solid #e2e8f0;">${fullName}</td></tr>
+                <tr><td style="border-bottom:1px solid #e2e8f0;font-weight:700;">Email (Reply-To)</td><td style="border-bottom:1px solid #e2e8f0;"><a href="mailto:${email}">${email}</a></td></tr>
+                <tr><td style="border-bottom:1px solid #e2e8f0;font-weight:700;">Phone Number</td><td style="border-bottom:1px solid #e2e8f0;"><a href="tel:${phone}">${phone}</a></td></tr>
+                <tr><td style="border-bottom:1px solid #e2e8f0;font-weight:700;">Product Interest</td><td style="border-bottom:1px solid #e2e8f0;">${productInterest}</td></tr>
+                <tr><td style="border-bottom:1px solid #e2e8f0;font-weight:700;">Estimated Quantity / Area</td><td style="border-bottom:1px solid #e2e8f0;">${estimatedQuantity || 'Not specified'}</td></tr>
+                <tr><td style="border-bottom:1px solid #e2e8f0;font-weight:700;">Project Location</td><td style="border-bottom:1px solid #e2e8f0;">${projectLocation}</td></tr>
+                <tr><td style="border-bottom:1px solid #e2e8f0;font-weight:700;">Project Parameters</td><td style="border-bottom:1px solid #e2e8f0;">${projectParams.replace(/\n/g, '<br>')}</td></tr>
+              </table>
+            </div>
+          </div>`;
 
-        const postData = `secret=${encodeURIComponent(RECAPTCHA_SECRET_KEY)}&response=${encodeURIComponent(token)}`;
-        const verifyReq = https.request({
-          hostname: 'www.google.com',
-          path: '/recaptcha/api/siteverify',
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Content-Length': Buffer.byteLength(postData)
-          }
-        }, (verifyRes) => {
-          let gData = '';
-          verifyRes.on('data', c => gData += c);
-          verifyRes.on('end', async () => {
-            try {
-              const gJson = JSON.parse(gData);
-              if (!gJson.success) {
-                res.writeHead(400, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-                res.end(JSON.stringify({ success: false, status: 'error', message: 'reCAPTCHA validation failed. Please try again.', codes: gJson['error-codes'] }));
-                return;
-              }
+        const clientHtml = `
+          <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;border:1px solid #cbd5e1;border-top:5px solid #8CC63F;">
+            <div style="background:#003B73;color:#fff;padding:20px 24px;">
+              <div style="color:#8CC63F;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">MLR Infra</div>
+              <h2 style="margin:6px 0 0;font-size:20px;">Thank You for Contacting MLR Infra</h2>
+              <p style="margin:6px 0 0;font-size:13px;color:#e2e8f0;">We bring the factory to your site</p>
+            </div>
+            <div style="padding:24px;color:#1e293b;font-size:14px;line-height:1.6;">
+              <p>Dear <strong>${fullName}</strong>,</p>
+              <p>Thank you for reaching out to <strong>MLR Infra</strong>. We have received your enquiry for <strong>${productInterest}</strong> at <strong>${projectLocation}</strong> and our team will get back to you within 24 business hours.</p>
+              <p>For immediate assistance, call us at <strong>${SMTP_CONFIG.companyPhone}</strong> or reply directly to this email.</p>
+              <p style="margin-top:20px;">Warm regards,<br><strong>MLR Infra Team</strong></p>
+            </div>
+          </div>`;
 
-              const teamHtml = `
-                <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;border:1px solid #cbd5e1;border-top:5px solid #0056A7;">
-                  <div style="background:#0a192f;color:#fff;padding:20px 24px;">
-                    <div style="color:#8CC63F;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">MLR Infra &bull; New Project Enquiry</div>
-                    <h2 style="margin:6px 0 0;font-size:20px;">New Quote Request from ${fullName}</h2>
-                    <p style="margin:6px 0 0;font-size:13px;color:#cbd5e1;">Reply directly to this email to respond to <strong>${fullName}</strong> (${email}).</p>
-                  </div>
-                  <div style="padding:24px;">
-                    <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse:collapse;font-size:14px;">
-                      <tr><td style="border-bottom:1px solid #e2e8f0;font-weight:700;width:36%;">Full Name</td><td style="border-bottom:1px solid #e2e8f0;">${fullName}</td></tr>
-                      <tr><td style="border-bottom:1px solid #e2e8f0;font-weight:700;">Email (Reply-To)</td><td style="border-bottom:1px solid #e2e8f0;"><a href="mailto:${email}">${email}</a></td></tr>
-                      <tr><td style="border-bottom:1px solid #e2e8f0;font-weight:700;">Phone Number</td><td style="border-bottom:1px solid #e2e8f0;"><a href="tel:${phone}">${phone}</a></td></tr>
-                      <tr><td style="border-bottom:1px solid #e2e8f0;font-weight:700;">Product Interest</td><td style="border-bottom:1px solid #e2e8f0;">${productInterest}</td></tr>
-                      <tr><td style="border-bottom:1px solid #e2e8f0;font-weight:700;">Estimated Quantity / Area</td><td style="border-bottom:1px solid #e2e8f0;">${estimatedQuantity || 'Not specified'}</td></tr>
-                      <tr><td style="border-bottom:1px solid #e2e8f0;font-weight:700;">Project Location</td><td style="border-bottom:1px solid #e2e8f0;">${projectLocation}</td></tr>
-                      <tr><td style="border-bottom:1px solid #e2e8f0;font-weight:700;">Project Parameters</td><td style="border-bottom:1px solid #e2e8f0;">${projectParams.replace(/\n/g, '<br>')}</td></tr>
-                    </table>
-                  </div>
-                </div>`;
-
-              const clientHtml = `
-                <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;border:1px solid #cbd5e1;border-top:5px solid #8CC63F;">
-                  <div style="background:#003B73;color:#fff;padding:20px 24px;">
-                    <div style="color:#8CC63F;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">MLR Infra</div>
-                    <h2 style="margin:6px 0 0;font-size:20px;">Thank You for Contacting MLR Infra</h2>
-                    <p style="margin:6px 0 0;font-size:13px;color:#e2e8f0;">We bring the factory to your site</p>
-                  </div>
-                  <div style="padding:24px;color:#1e293b;font-size:14px;line-height:1.6;">
-                    <p>Dear <strong>${fullName}</strong>,</p>
-                    <p>Thank you for reaching out to <strong>MLR Infra</strong>. We have received your enquiry for <strong>${productInterest}</strong> at <strong>${projectLocation}</strong> and our team will get back to you within 24 business hours.</p>
-                    <p>For immediate assistance, call us at <strong>${SMTP_CONFIG.companyPhone}</strong> or reply directly to this email.</p>
-                    <p style="margin-top:20px;">Warm regards,<br><strong>MLR Infra Team</strong></p>
-                  </div>
-                </div>`;
-
-              try {
-                await sendSmtpMail({
-                  fromEmail: SMTP_CONFIG.user,
-                  fromName: SMTP_CONFIG.fromName,
-                  toEmail: SMTP_CONFIG.toEmail,
-                  replyTo: `"${fullName}" <${email}>`,
-                  subject: `New Project Quote Request: ${productInterest} — ${fullName} (${projectLocation})`,
-                  htmlBody: teamHtml
-                });
-
-                await sendSmtpMail({
-                  fromEmail: SMTP_CONFIG.user,
-                  fromName: SMTP_CONFIG.fromName,
-                  toEmail: email,
-                  replyTo: `"${SMTP_CONFIG.fromName}" <${SMTP_CONFIG.toEmail}>`,
-                  subject: `We've Received Your Project Enquiry — MLR Infra`,
-                  htmlBody: clientHtml
-                }).catch(() => {});
-
-                res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-                res.end(JSON.stringify({
-                  success: true,
-                  status: 'success',
-                  message: 'Thank you! Your project enquiry has been received. We have sent a confirmation to your email and will respond shortly.'
-                }));
-              } catch (mailErr) {
-                console.error('SMTP send warning:', mailErr.message);
-                res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-                res.end(JSON.stringify({
-                  success: false,
-                  status: 'error',
-                  message: `Mail delivery failed (${mailErr.message}). Please ensure Gmail App Password / SMTP access is enabled for ${SMTP_CONFIG.user}, or call us at ${SMTP_CONFIG.companyPhone}.`
-                }));
-              }
-            } catch (err) {
-              res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-              res.end(JSON.stringify({ success: false, status: 'error', message: 'Failed to process verification response' }));
-            }
+        try {
+          await sendSmtpMail({
+            fromEmail: SMTP_CONFIG.user,
+            fromName: SMTP_CONFIG.fromName,
+            toEmail: SMTP_CONFIG.toEmail,
+            replyTo: `"${fullName}" <${email}>`,
+            subject: `New Project Quote Request: ${productInterest} — ${fullName} (${projectLocation})`,
+            htmlBody: teamHtml
           });
-        });
 
-        verifyReq.on('error', (err) => {
+          await sendSmtpMail({
+            fromEmail: SMTP_CONFIG.user,
+            fromName: SMTP_CONFIG.fromName,
+            toEmail: email,
+            replyTo: `"${SMTP_CONFIG.fromName}" <${SMTP_CONFIG.toEmail}>`,
+            subject: `We've Received Your Project Enquiry — MLR Infra`,
+            htmlBody: clientHtml
+          }).catch(() => {});
+
+          res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+          res.end(JSON.stringify({
+            success: true,
+            status: 'success',
+            message: 'Thank you! Your project enquiry has been received. We have sent a confirmation to your email and will respond shortly.'
+          }));
+        } catch (mailErr) {
+          console.error('SMTP send warning:', mailErr.message);
           res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-          res.end(JSON.stringify({ success: false, status: 'error', message: err.message }));
-        });
-
-        verifyReq.write(postData);
-        verifyReq.end();
+          res.end(JSON.stringify({
+            success: false,
+            status: 'error',
+            message: `Mail delivery failed (${mailErr.message}). Please call us at ${SMTP_CONFIG.companyPhone}.`
+          }));
+        }
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
         res.end(JSON.stringify({ success: false, status: 'error', message: 'Invalid request payload' }));
