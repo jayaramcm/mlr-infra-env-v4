@@ -1,0 +1,16 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Blog routes
+  RewriteRule ^blog/?$ blog.html [L]
+  RewriteRule ^reliable-concrete-paver-blocks-supplier-hyderabad/?$ reliable-concrete-paver-blocks-supplier-hyderabad.html [L]
+
+  # Section SEO URL slugs -> index.html
+  RewriteRule ^on-site-concrete-manufacturing-services-in-india/?$ index.html [L]
+  RewriteRule ^construction-materials-and-services-in-hyderabad/?$ index.html [L]
+  RewriteRule ^construction-material-supply-projects-telangana/?$ index.html [L]
+  RewriteRule ^on-site-concrete-manufacturing-process/?$ index.html [L]
+  RewriteRule ^small-quantity-concrete-products-supply/?$ index.html [L]
+  RewriteRule ^contact-concrete-products-manufacturer-hyderabad/?$ index.html [L]
+</IfModule>

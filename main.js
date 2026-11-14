@@ -56,6 +56,34 @@ document.addEventListener('DOMContentLoaded', () => {
     { id: 'contact', label: 'Contact' }
   ];
 
+  function syncSectionMetaTags(sectionId) {
+    const sec = document.getElementById(sectionId);
+    if (!sec) return;
+    const metaTitle = sec.getAttribute('data-meta-title');
+    const metaDesc = sec.getAttribute('data-meta-description');
+    const focusKeyword = sec.getAttribute('data-focus-keyword');
+
+    if (metaTitle) {
+      document.title = metaTitle;
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle) ogTitle.setAttribute('content', metaTitle);
+      const twTitle = document.querySelector('meta[name="twitter:title"]');
+      if (twTitle) twTitle.setAttribute('content', metaTitle);
+    }
+    if (metaDesc) {
+      const descEl = document.querySelector('meta[name="description"]');
+      if (descEl) descEl.setAttribute('content', metaDesc);
+      const ogDesc = document.querySelector('meta[property="og:description"]');
+      if (ogDesc) ogDesc.setAttribute('content', metaDesc);
+      const twDesc = document.querySelector('meta[name="twitter:description"]');
+      if (twDesc) twDesc.setAttribute('content', metaDesc);
+    }
+    if (focusKeyword) {
+      const kwEl = document.querySelector('meta[name="keywords"]');
+      if (kwEl) kwEl.setAttribute('content', focusKeyword);
+    }
+  }
+
   function calculateActiveIndex() {
     const scrollY = window.scrollY || window.pageYOffset || 0;
     const scrollBottom = window.innerHeight + scrollY;
@@ -140,6 +168,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (isHomePage) {
     saveNavState(isActuallyScrolled, sections[initialIndex].label, initialIndex);
+
+    // Check if URL path matches a section SEO URL slug
+    const cleanPathSlug = window.location.pathname.replace(/^\/+|\/+$/g, '');
+    if (cleanPathSlug && cleanPathSlug !== 'index.html') {
+      const matchedSection = document.querySelector(`section[data-url-slug="${cleanPathSlug}"]`);
+      if (matchedSection && matchedSection.id) {
+        syncSectionMetaTags(matchedSection.id);
+        setTimeout(() => {
+          matchedSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 350);
+      }
+    }
   }
 
   function updateNavbar(options) {
@@ -169,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveNavState(isScrolled, sections[targetIndex].label, targetIndex);
 
     if (targetIndex !== currentIndex) {
+      syncSectionMetaTags(sections[targetIndex].id);
       if (immediate) {
         currentIndex = targetIndex;
         const span = roller.querySelector('.nav-indicator-text.current') || roller.querySelector('.nav-indicator-text');

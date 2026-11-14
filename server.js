@@ -263,8 +263,18 @@ const requestHandler = (req, res) => {
     return;
   }
 
+  const seoSlugRoutes = new Set([
+    '/on-site-concrete-manufacturing-services-in-india',
+    '/construction-materials-and-services-in-hyderabad',
+    '/construction-material-supply-projects-telangana',
+    '/on-site-concrete-manufacturing-process',
+    '/small-quantity-concrete-products-supply',
+    '/contact-concrete-products-manufacturer-hyderabad'
+  ]);
+
   let reqPath = decodedPath;
-  if (reqPath === '/' || reqPath === '') {
+  const trimmedRoute = reqPath.replace(/\/+$/, '');
+  if (reqPath === '/' || reqPath === '' || seoSlugRoutes.has(trimmedRoute)) {
     reqPath = '/index.html';
   } else if (reqPath === '/blog' || reqPath === '/blog/') {
     reqPath = '/blog.html';
