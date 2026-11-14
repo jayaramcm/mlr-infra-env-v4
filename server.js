@@ -283,6 +283,11 @@ const requestHandler = (req, res) => {
     reqPath === '/reliable-concrete-paver-blocks-supplier-hyderabad/'
   ) {
     reqPath = '/reliable-concrete-paver-blocks-supplier-hyderabad.html';
+  } else if (
+    reqPath === '/on-site-concrete-manufacturing-services-india' ||
+    reqPath === '/on-site-concrete-manufacturing-services-india/'
+  ) {
+    reqPath = '/on-site-concrete-manufacturing-services-india.html';
   }
 
   const safePath = path.normalize(reqPath).replace(/^(\.\.[\/\\])+/, '');

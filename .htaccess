@@ -5,6 +5,7 @@
   # Blog routes
   RewriteRule ^blog/?$ blog.html [L]
   RewriteRule ^reliable-concrete-paver-blocks-supplier-hyderabad/?$ reliable-concrete-paver-blocks-supplier-hyderabad.html [L]
+  RewriteRule ^on-site-concrete-manufacturing-services-india/?$ on-site-concrete-manufacturing-services-india.html [L]
 
   # Section SEO URL slugs -> index.html
   RewriteRule ^on-site-concrete-manufacturing-services-in-india/?$ index.html [L]

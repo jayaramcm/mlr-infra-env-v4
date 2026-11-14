@@ -5753,6 +5753,10 @@ button {
   background-color: #F4F5F2;
 }
 
+.featured-article-card + .featured-article-card {
+  margin-top: 28px;
+}
+
 .featured-article-card {
   position: relative;
   display: grid;
