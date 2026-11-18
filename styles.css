@@ -4697,6 +4697,33 @@ button {
   max-width: 300px;
 }
 
+.footer-socials {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.footer-social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--white);
+  text-decoration: none;
+  transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, transform 200ms ease;
+}
+
+.footer-social-link:hover {
+  background: var(--green, #8CC63F);
+  border-color: var(--green, #8CC63F);
+  color: var(--ink, #0B1F33);
+  transform: translateY(-2px);
+}
+
 .footer-col-title {
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
